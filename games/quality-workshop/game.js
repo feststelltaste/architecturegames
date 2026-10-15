@@ -46,7 +46,7 @@
 
   /* ---------- Skalierung der Bühne ---------- */
   function fit() {
-    var W = PANEL ? 600 : STAGE_W, H = PANEL ? 860 : 700;
+    var W = PANEL ? 600 : STAGE_W, H = PANEL ? 920 : 700;
     wrap.style.aspectRatio = W + ' / ' + H;
     stage.style.transform = 'scale(' + (wrap.clientWidth / W) + ')';
   }
@@ -277,7 +277,7 @@
   function makeBubble(person, pe, text, small) {
     var cx = pe.cx;
     var b = el('div', { 'class': 'bubble' + (small ? ' small' : '') });
-    if (pe.side && !small) b.style.maxWidth = '340px';
+    if (PANEL && !small) b.style.maxWidth = '560px';
     b.style.setProperty('--c', person.color);
     el('div', { 'class': 'who' }, b, person.name);
     el('br', null, b);
@@ -288,7 +288,8 @@
     t.textContent = text;
     var w = b.offsetWidth, h = b.offsetHeight;
     t.textContent = '';
-    var left = Math.max(8, Math.min(STAGE_W - 8 - w, cx - w / 2));
+    var sw = PANEL ? 600 : STAGE_W;
+    var left = Math.max(8, Math.min(sw - 8 - w, cx - w / 2));
     b.style.left = left + 'px';
     b.style.top = Math.max(8, pe.bubbleBottom - h) + 'px';
     b.style.width = w + 'px';
@@ -345,9 +346,9 @@
   }
 
   // Sitzplätze rund um den ovalen Tisch (Mitte 480/486, Halbachsen 360/190)
-  // Querformat: Tisch 720x380 (Mitte 480/486). Hochformat: Tisch 560x560 (Mitte 300/530).
+  // Querformat: Tisch 720x380 (Mitte 480/486). Hochformat: Tisch 560x560 (Mitte 300/580).
   function edgeY(x) {
-    var c = PANEL ? { x: 300, y: 530, a: 290, b: 280 } : { x: 480, y: 486, a: 360, b: 190 };
+    var c = PANEL ? { x: 300, y: 580, a: 290, b: 280 } : { x: 480, y: 486, a: 360, b: 190 };
     return c.y - c.b * Math.sqrt(Math.max(0, 1 - Math.pow((x - c.x) / c.a, 2)));
   }
   var LAND = {
