@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Architekturspiele</title>
   <meta name="description" content="Kleine Browserspiele rund um Softwarearchitektur.">
+  <meta name="theme-color" content="#0d0820">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Archi-Spiele">
   <link rel="stylesheet" href="assets/retro.css">
   <style>
     .wrap { max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
@@ -16,6 +23,8 @@
     .game b { display: block; font: 14px/1.5 var(--px); margin-bottom: 8px; }
     .game span { display: block; font: 22px/1.1 var(--vt); color: #3a2a10; }
     .soon { margin-top: 18px; font: 22px/1.1 var(--vt); color: #8a7ab8; }
+    .app-box { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .app-box .tip { flex: 1 1 100%; margin: 0; font: 21px/1.1 var(--vt); color: #bcd2ff; }
     footer { margin-top: 40px; font-size: 13px; color: #8a7ab8; }
     footer a { color: #9ad0ff; }
   </style>
@@ -33,7 +42,25 @@
       </a>
     </div>
     <p class="soon">Weitere Spiele folgen.</p>
+    <div class="app-box">
+      <button class="pxbtn" id="installBtn" type="button" hidden>Als App installieren</button>
+      <button class="pxbtn" id="fullBtn" type="button" hidden>Vollbild</button>
+      <p class="tip">Ohne Browserleiste spielen: Am Rechner F11 drücken (Mac: Ctrl+Cmd+F). Am Handy im Browsermenü „Zum Startbildschirm hinzufügen“ wählen (iPhone: Teilen &rarr; Zum Home-Bildschirm), dann startet das Spiel als App im Vollbild.</p>
+    </div>
     <footer>Schriften: Press Start 2P und VT323 (SIL Open Font License), liegen lokal in <code>assets/fonts</code>.</footer>
   </div>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+    }
+    var deferred = null, installBtn = document.getElementById('installBtn'), fullBtn = document.getElementById('fullBtn');
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; installBtn.hidden = false; });
+    installBtn.addEventListener('click', function () { if (deferred) { deferred.prompt(); deferred = null; installBtn.hidden = true; } });
+    window.addEventListener('appinstalled', function () { installBtn.hidden = true; });
+    if (document.fullscreenEnabled) {
+      fullBtn.hidden = false;
+      fullBtn.addEventListener('click', function () { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(function () {}); });
+    }
+  </script>
 </body>
 </html>

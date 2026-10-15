@@ -615,6 +615,19 @@
   /* ---------- Verdrahtung ---------- */
   $('#submitBtn').addEventListener('click', evaluate);
   $('#zoomBtn').addEventListener('click', openFull);
+  // Vollbild (Browser-Fullscreen); auf dem iPhone gibt es das nicht, dort hilft nur „Zum Home-Bildschirm“
+  var fsBtn = $('#btnFull');
+  if (document.fullscreenEnabled) {
+    fsBtn.hidden = false;
+    fsBtn.addEventListener('click', function () {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(function () {});
+    });
+    document.addEventListener('fullscreenchange', function () {
+      fsBtn.textContent = document.fullscreenElement ? 'Vollbild aus' : 'Vollbild';
+      fit();
+    });
+  }
   $('#fullClose').addEventListener('click', closeFull);
   $('#fullSubmit').addEventListener('click', function () { if (S.phase === 'result') closeFull(); else evaluate(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeSheet(); closeFull(); } });

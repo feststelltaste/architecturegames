@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Qualitäts-Workshop – Architekturspiele</title>
   <meta name="description" content="Hör den Beteiligten zu und bewerte die Qualitätsmerkmale nach ISO 25010 auf dem Radar-Poster.">
+  <meta name="theme-color" content="#0d0820">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../../assets/icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Archi-Spiele">
   <link rel="stylesheet" href="../../assets/retro.css">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -107,6 +114,7 @@
           <button class="btn" id="btnNotes" type="button">Notizbuch <span id="notesCount" class="count"></span></button>
           <button class="btn" id="btnScale" type="button">Skala</button>
           <button class="btn" id="zoomBtn" type="button">Poster groß</button>
+          <button class="btn" id="btnFull" type="button" hidden>Vollbild</button>
           <button class="btn primary vb-play" id="submitBtn" type="button">Einschätzung abgeben</button>
           <button class="btn vb-result" id="btnResult" type="button">Auswertung</button>
           <button class="btn primary vb-result" id="btnNext" type="button">Nächster Fall</button>
@@ -144,6 +152,11 @@
     <div id="fullHolder" class="fv-holder"></div>
   </div>
 
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('../../sw.js').catch(function () {}); });
+    }
+  </script>
   <script src="data.js"></script>
   <script src="sprites.js"></script>
   <script src="game.js"></script>

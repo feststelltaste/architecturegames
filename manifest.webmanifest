@@ -1,0 +1,17 @@
+{
+  "name": "Architekturspiele",
+  "short_name": "Archi-Spiele",
+  "description": "Kleine Browserspiele rund um Softwarearchitektur.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#1b1030",
+  "theme_color": "#0d0820",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -26,3 +26,7 @@ Repository → Settings → Pages → *Deploy from a branch* → Branch `main`, 
 ## Schriften
 
 Press Start 2P und VT323 (SIL Open Font License) liegen lokal in `assets/fonts`, es werden keine Daten an Google Fonts gesendet.
+
+## Als App im Vollbild
+
+Die Sammlung ist eine installierbare Web-App (`manifest.webmanifest`, `sw.js`, Icons in `assets/icons`). Im Browser gibt es einen „Vollbild“-Knopf (nicht auf dem iPhone), und über „Zum Startbildschirm hinzufügen“ startet sie ohne Browserleiste im Vollbild und funktioniert danach auch offline. Das setzt HTTPS voraus, was GitHub Pages bietet.
