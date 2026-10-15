@@ -381,7 +381,9 @@
       Q.drawPerson(canvas, p.look, S.resultMood && S.resultMood[p.id] || 'neutral', turn);
       btn.addEventListener('click', function () { speak(p); });
       var plate = el('div', { 'class': 'plate' }, platesEl);
-      plate.style.left = (cx - 78) + 'px'; plate.style.top = Math.round(edge + 8) + 'px';
+      // äußere Schilder ein Stück nach oben, damit sie nicht tief in den Tisch hängen
+      var lift = (edge - edgeY(PANEL ? 300 : 480)) * 0.7;
+      plate.style.left = (cx - 78) + 'px'; plate.style.top = Math.round(edge + 8 - lift) + 'px';
       if (k !== 1) { plate.style.scale = String(k); plate.style.transformOrigin = '50% 0'; }
       plate.textContent = p.name;
       el('small', null, plate, p.role);
