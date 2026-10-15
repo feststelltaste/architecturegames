@@ -230,3 +230,7 @@ body.portrait .t-levels .pxbtn { font-size: 10px; padding: 8px 10px; }
 body.portrait .t-cases .pxbtn span:first-child { font-size: 10px; }
 body.portrait .t-best { font-size: 9px; }
 body.portrait .layout { padding: 8px; gap: 10px; }
+.res-row .hint { display: block; color: #333; font-style: normal; font-size: 12.5px; margin-top: 2px; }
+.res-row .hint::first-line { font-weight: normal; }
+.res-why { border-top: 2px groove #fff; padding-top: 6px; margin-top: 6px; font-size: 13px; }
+.res-why p { margin: 4px 0; }
