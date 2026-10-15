@@ -300,18 +300,14 @@
   // Sitzplätze rund um den ovalen Tisch (Mitte 480/486, Halbachsen 360/190)
   function edgeY(x) { return 486 - 190 * Math.sqrt(Math.max(0, 1 - Math.pow((x - 480) / 360, 2))); }
   var SLOT_SETS = {
-    3: ['left', 'back-c', 'right'],
-    4: ['left', 'back-l4', 'back-r4', 'right'],
-    5: ['left', 'back-l5', 'back-c', 'back-r5', 'right']
+    3: ['b3l', 'b3c', 'b3r'],
+    4: ['b4a', 'b4b', 'b4c', 'b4d'],
+    5: ['b5a', 'b5b', 'b5c', 'b5d', 'b5e']
   };
   var SLOTS = {
-    'left':    { cx: 66,  top: 334, side: true,  turn: 5 },
-    'right':   { cx: 894, top: 334, side: true,  turn: -5 },
-    'back-c':  { cx: 480, back: true, turn: 0 },
-    'back-l4': { cx: 345, back: true, turn: 2 },
-    'back-r4': { cx: 615, back: true, turn: -2 },
-    'back-l5': { cx: 300, back: true, turn: 2 },
-    'back-r5': { cx: 660, back: true, turn: -2 }
+    b3l: { cx: 300, turn: 3 },  b3c: { cx: 480, turn: 0 },  b3r: { cx: 660, turn: -3 },
+    b4a: { cx: 255, turn: 3 },  b4b: { cx: 405, turn: 2 },  b4c: { cx: 555, turn: -2 }, b4d: { cx: 705, turn: -3 },
+    b5a: { cx: 180, turn: 4 },  b5b: { cx: 330, turn: 3 },  b5c: { cx: 480, turn: 0 },  b5d: { cx: 630, turn: -3 }, b5e: { cx: 780, turn: -4 }
   };
 
   function buildPeople() {
@@ -319,19 +315,18 @@
     var ps = S.scenario.people, set = SLOT_SETS[ps.length];
     ps.forEach(function (p, i) {
       var slot = SLOTS[set[i]];
-      var cx = slot.cx, top = slot.back ? Math.round(edgeY(cx) - 164) : slot.top;
-      var btn = el('button', { 'class': 'person' + (slot.side ? ' side' : ''), type: 'button', 'aria-label': 'Mit ' + p.name + ' sprechen' }, peopleEl);
+      var cx = slot.cx, top = Math.round(edgeY(cx) - 164);
+      var btn = el('button', { 'class': 'person', type: 'button', 'aria-label': 'Mit ' + p.name + ' sprechen' }, peopleEl);
       btn.style.left = (cx - 72) + 'px';
       btn.style.top = top + 'px';
       btn.style.animationDelay = (-i * 0.9) + 's';
       var canvas = el('canvas', null, btn);
       var badge = el('span', { 'class': 'badge' }, btn);
-      personEls[p.id] = { btn: btn, canvas: canvas, badge: badge, person: p, cx: cx, side: !!slot.side, turn: slot.turn, bubbleBottom: top - 4 };
+      personEls[p.id] = { btn: btn, canvas: canvas, badge: badge, person: p, cx: cx, side: false, turn: slot.turn, bubbleBottom: top - 4 };
       Q.drawPerson(canvas, p.look, 'neutral', slot.turn);
       btn.addEventListener('click', function () { speak(p); });
-      var plate = el('div', { 'class': 'plate' + (slot.side ? ' side' : '') }, platesEl);
-      if (slot.side) { plate.style.left = (cx - 62) + 'px'; plate.style.top = (top + 138) + 'px'; }
-      else { plate.style.left = (cx - 78) + 'px'; plate.style.top = Math.round(edgeY(cx) + 8) + 'px'; }
+      var plate = el('div', { 'class': 'plate' }, platesEl);
+      plate.style.left = (cx - 78) + 'px'; plate.style.top = Math.round(edgeY(cx) + 8) + 'px';
       plate.textContent = p.name;
       el('small', null, plate, p.role);
     });
