@@ -458,7 +458,12 @@
     var a2 = el('i', null, lg); a2.style.borderColor = '#16883e'; a2.style.borderTopStyle = 'dashed'; lg.appendChild(document.createTextNode('gemeint'));
 
     sc.people.forEach(function (p, pi) {
-      var ds = p.statements.map(function (st) { return diffs[st.attr]; });
+      // Zufriedenheit: Abstand zu dem, was diese Person selbst wollte (bei Konflikten weicht das von der Auflösung ab)
+      var ds = p.statements.map(function (st) {
+        var ai0 = ATTRS.findIndex(function (a) { return a.id === st.attr; });
+        var want = st.claim != null ? st.claim : sc.truth[st.attr];
+        return Math.abs(S.values[ai0] - want);
+      });
       var mean = ds.reduce(function (a, b) { return a + b; }, 0) / ds.length;
       var mood = Q.JUDGE.mood(mean);
       var box = el('div', { 'class': 'res-person' }, body);
@@ -468,10 +473,12 @@
       nm.appendChild(document.createTextNode(mood === 'happy' ? 'zufrieden' : mood === 'meh' ? 'nicht ganz überzeugt' : 'verärgert'));
       p.statements.forEach(function (st, k) {
         var ai = ATTRS.findIndex(function (a) { return a.id === st.attr; });
-        var d = ds[k], cls = d <= 1 ? 'ok' : d <= 3 ? 'mid' : 'bad';
+        var d = diffs[st.attr], cls = d <= 1 ? 'ok' : d <= 3 ? 'mid' : 'bad';
         var row = el('div', { 'class': 'res-row' }, box);
-        el('span', { 'class': 'nums ' + cls }, row, (d <= 1 ? '✔ ' : '✘ ') + ATTRS[ai].name + ': du ' + S.values[ai] + ', gemeint ' + sc.truth[st.attr]);
+        var conflict = st.claim != null && Math.abs(st.claim - sc.truth[st.attr]) > 1;
+        el('span', { 'class': 'nums ' + cls }, row, (d <= 1 ? '✔ ' : '✘ ') + ATTRS[ai].name + ': du ' + S.values[ai] + ', gemeint ' + sc.truth[st.attr] + (conflict ? ' (' + p.name.split(' ').pop() + ' wollte ' + st.claim + ')' : ''));
         el('q', null, row, '„' + st.text + '“');
+        if (st.hint) el('em', { 'class': 'hint' }, row, 'Deutung: ' + st.hint);
       });
       // Reaktion auf der Bühne, gestaffelt
       setTimeout(function () {
@@ -488,6 +495,14 @@
         setSpeech(p, line, pi > 0);
       }, 500 + pi * 700);
     });
+
+    if (sc.why) {
+      var wb = el('div', { 'class': 'res-why' }, body);
+      el('b', null, wb, 'So löst sich der Konflikt auf');
+      ATTRS.forEach(function (a) {
+        if (sc.why[a.id]) { var wp = el('p', null, wb); el('b', null, wp, a.name + ': '); wp.appendChild(document.createTextNode(sc.why[a.id])); }
+      });
+    }
 
     var act = el('div', { 'class': 'res-actions' }, body);
     var again = el('button', { 'class': 'btn', type: 'button' }, act, 'Nochmal');

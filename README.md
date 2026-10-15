@@ -10,7 +10,8 @@ Du bist der Architekt und sitzt am Tisch (Pixel-Adventure-Look der 90er). Auf de
 
 - Das Poster lässt sich im Vollbild bedienen (am Smartphone per Tipp aufs Poster, sonst über „Poster groß“).
 - Schwierigkeit **Einfach**: 3 Personen, jede Aussage zielt klar auf ein Merkmal. Drei Fälle (Online-Shop, Klinik-Portal, Lern-App).
-- **Mittel** (4 Personen) und **Schwer** (5 Personen) sind im Titelbild vorgemerkt, aber noch nicht gebaut.
+- Schwierigkeit **Mittel**: 4 Personen, vage und indirekte Aussagen, Merkmale werden mehrfach genannt. Nach der Auswertung steht zu jeder Aussage eine Deutung. Zwei Fälle (Heizungs-App, Bürgerportal).
+- Schwierigkeit **Schwer**: 5 Personen mit widersprüchlichen Wünschen. Die Auflösung ergibt sich aus Daten, Auflagen und Praxis. Eine Person kann verärgert sein, obwohl du richtig lagst (`claim` in `data.js`). Zwei Fälle (Neobank, Landwirtschaftsplattform).
 
 Neue Fälle: in `games/quality-workshop/data.js` einen Eintrag in `QW.SCENARIOS` ergänzen (Personen, Aussagen, gemeinte Werte in `truth`). Aussehen der Figuren steht in `look`, gezeichnet wird es prozedural in `sprites.js`.
 
