@@ -217,8 +217,8 @@ body.portrait #stage { width: 600px; height: 920px; background: #3b3d6b; }
 body.portrait #room { left: -180px; }
 body.portrait #table { left: 20px; top: 300px; width: 560px; height: 600px; }
 body.portrait #table .decor { display: none; }
-body.portrait #posterStage { left: 30px; top: 380px; width: 540px; height: 520px; }
-body.portrait #poster { left: 0; top: -10px; width: 540px; height: 540px; transform: rotateX(28deg); }
+body.portrait #posterStage { left: 17px; top: 352px; width: 566px; height: 540px; }
+body.portrait #poster { left: 0; top: -13px; width: 566px; height: 566px; transform: rotateX(26deg); }
 body.portrait #radar { width: 100%; height: 100%; }
 body.portrait #zoomBtn { display: none; }
 body.portrait .overlay { position: fixed; inset: 0; z-index: 200; overflow: auto; padding: 16px 14px; }
