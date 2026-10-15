@@ -1,0 +1,91 @@
+/* Gemeinsame Optik der Spielesammlung: Fonts, Win95-Fenster, Pixel-Buttons. */
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('fonts/press-start-2p-latin-400-normal.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'VT323';
+  src: url('fonts/vt323-latin-400-normal.woff2') format('woff2');
+  font-display: swap;
+}
+
+:root {
+  --bg: #1b1030;
+  --ink: #111;
+  --win: #c0c0c0;
+  --navy: #000080;
+  --yellow: #ffd23f;
+  --px: 'Press Start 2P', 'Courier New', monospace;
+  --vt: 'VT323', 'Courier New', monospace;
+  --ui: Tahoma, Verdana, 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  background-image: radial-gradient(#2a1c48 1px, transparent 1px);
+  background-size: 6px 6px;
+  color: #eee;
+  font-family: var(--ui);
+}
+
+.win {
+  background: var(--win);
+  border: 2px solid;
+  border-color: #fff #404040 #404040 #fff;
+  box-shadow: 2px 2px 0 #000;
+  color: #000;
+  font: 14px/1.35 var(--ui);
+  margin-bottom: 12px;
+}
+.win[hidden] { display: none; }
+.win-title {
+  background: linear-gradient(90deg, var(--navy), #1084d0);
+  color: #fff;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 3px 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.win-body { padding: 8px; }
+
+.btn {
+  background: var(--win);
+  color: #000;
+  border: 2px solid;
+  border-color: #fff #404040 #404040 #fff;
+  box-shadow: 1px 1px 0 #000;
+  padding: 7px 12px;
+  font: bold 14px var(--ui);
+  cursor: pointer;
+}
+.btn:active, .btn[aria-pressed="true"] { border-color: #404040 #fff #fff #404040; box-shadow: none; }
+.btn:focus-visible { outline: 2px dotted #000; outline-offset: -6px; }
+.btn.primary { background: #d8e8ff; }
+.btn[disabled] { color: #808080; cursor: default; }
+
+.inset {
+  background: #fff;
+  border: 2px solid;
+  border-color: #404040 #fff #fff #404040;
+  padding: 6px 8px;
+}
+
+.pxbtn {
+  background: var(--yellow);
+  color: var(--ink);
+  border: 4px solid var(--ink);
+  box-shadow: 4px 4px 0 #000;
+  padding: 10px 14px;
+  font: 12px/1.4 var(--px);
+  cursor: pointer;
+  text-align: left;
+}
+.pxbtn:hover { background: #fff0a0; }
+.pxbtn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 #000; }
+.pxbtn:focus-visible { outline: 3px dashed #fff; outline-offset: 3px; }
+.pxbtn[disabled] { background: #7a7a8c; color: #3a3a4a; cursor: not-allowed; box-shadow: 4px 4px 0 #000; transform: none; }
