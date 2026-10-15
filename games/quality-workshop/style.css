@@ -204,7 +204,7 @@ body.noscroll { overflow: hidden; }
 #radar.full .axis-label { font-size: 15px; }
 
 /* Hochformat am Smartphone: Szene als Ausschnitt, Poster darunter in voller Breite */
-.speech-panel, .table-panel { display: none; }
+.speech-panel { display: none; }
 body.portrait .speech-panel {
   display: block; margin-top: 10px; min-height: 96px;
   background: #fffbe8; color: #111; border: 4px solid #111; padding: 8px 12px 10px;
@@ -213,15 +213,14 @@ body.portrait .speech-panel {
 .speech-panel p { margin: 0 0 6px; }
 .speech-panel .who { display: inline-block; background: #111; color: var(--c, #fff); font: 9px/1 var(--px); padding: 4px 6px; margin-right: 8px; vertical-align: middle; }
 .speech-panel .hint { color: #777; }
-body.portrait .table-panel {
-  display: block; margin-top: 10px; padding: 10px;
-  background:
-    repeating-linear-gradient(180deg, transparent 0 46px, rgba(0,0,0,.2) 46px 49px),
-    linear-gradient(180deg, #a56c36, #86552a);
-  border: 4px solid #4a2c12; box-shadow: inset 0 4px 0 #c1905a;
-}
-.panel-holder { width: 100%; aspect-ratio: 1; background: #f1e3bd; border: 3px solid #3a2a18; box-shadow: 4px 4px 0 rgba(0,0,0,.35); display: flex; }
-body.portrait #posterStage, body.portrait #bubbles, body.portrait #zoomBtn { display: none; }
+body.portrait #stage { width: 600px; height: 860px; background: #3b3d6b; }
+body.portrait #room { left: -180px; }
+body.portrait #table { left: 20px; top: 250px; width: 560px; height: 600px; }
+body.portrait #table .decor { display: none; }
+body.portrait #posterStage { left: 30px; top: 330px; width: 540px; height: 520px; }
+body.portrait #poster { left: 0; top: -10px; width: 540px; height: 540px; transform: rotateX(28deg); }
+body.portrait #radar { width: 100%; height: 100%; }
+body.portrait #bubbles, body.portrait #zoomBtn { display: none; }
 body.portrait .overlay { position: fixed; inset: 0; z-index: 200; overflow: auto; padding: 16px 14px; }
 body.portrait .t-title { font-size: 18px; }
 body.portrait .t-sub { font-size: 22px; }
@@ -231,5 +230,3 @@ body.portrait .t-levels .pxbtn { font-size: 10px; padding: 8px 10px; }
 body.portrait .t-cases .pxbtn span:first-child { font-size: 10px; }
 body.portrait .t-best { font-size: 9px; }
 body.portrait .layout { padding: 8px; gap: 10px; }
-body.portrait .table-panel { padding: 5px; border-width: 3px; }
-body.portrait .panel-holder { border-width: 2px; }

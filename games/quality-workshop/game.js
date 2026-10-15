@@ -45,18 +45,10 @@
   var personEls = {};         // id -> { btn, canvas, person }
 
   /* ---------- Skalierung der Bühne ---------- */
-  var CROP = null;          // Ausschnitt der Szene im Hochformat {x, w, h}
   function fit() {
-    var s;
-    if (PANEL && CROP) {
-      wrap.style.aspectRatio = CROP.w + ' / ' + CROP.h;
-      s = wrap.clientWidth / CROP.w;
-      stage.style.transform = 'translate(' + (-CROP.x * s) + 'px, 0) scale(' + s + ')';
-    } else {
-      wrap.style.aspectRatio = '';
-      s = wrap.clientWidth / STAGE_W;
-      stage.style.transform = 'scale(' + s + ')';
-    }
+    var W = PANEL ? 600 : STAGE_W, H = PANEL ? 860 : 700;
+    wrap.style.aspectRatio = W + ' / ' + H;
+    stage.style.transform = 'scale(' + (wrap.clientWidth / W) + ')';
   }
   window.addEventListener('resize', fit);
   fit();
@@ -115,12 +107,19 @@
   }
 
   function buildRadar(full) {
-    FULL = !!full; R = FULL ? 170 : 112; UNIT = R / 10; K = FULL ? 1.3 : 1;
+    FULL = !!full; R = FULL ? 164 : 112; UNIT = R / 10; K = FULL ? 1.3 : 1;
     radar.textContent = ''; labelEls = []; seg = {};
     radar.classList.toggle('full', FULL);
     radar.setAttribute('viewBox', FULL ? '-256 -256 512 512' : '-250 -250 500 500');
     var k, a;
-    if (!FULL) {
+    if (FULL) {
+      var op = [];
+      for (k = 0; k < 8; k++) {
+        a = (-90 + 22.5 + 45 * k) * Math.PI / 180;
+        op.push((272 * Math.cos(a)).toFixed(1) + ',' + (272 * Math.sin(a)).toFixed(1));
+      }
+      svg('polygon', { points: op.join(' '), fill: '#f1e3bd', stroke: '#3a2a18', 'stroke-width': 5 }, radar);
+    } else {
       // Papier: Achteck
       var paper = [];
       for (k = 0; k < 8; k++) {
@@ -346,66 +345,58 @@
   }
 
   // Sitzplätze rund um den ovalen Tisch (Mitte 480/486, Halbachsen 360/190)
-  function edgeY(x) { return 486 - 190 * Math.sqrt(Math.max(0, 1 - Math.pow((x - 480) / 360, 2))); }
-  var SLOT_SETS = {
-    3: ['b3l', 'b3c', 'b3r'],
-    4: ['b4a', 'b4b', 'b4c', 'b4d'],
-    5: ['b5a', 'b5b', 'b5c', 'b5d', 'b5e']
+  // Querformat: Tisch 720x380 (Mitte 480/486). Hochformat: Tisch 560x560 (Mitte 300/530).
+  function edgeY(x) {
+    var c = PANEL ? { x: 300, y: 530, a: 290, b: 280 } : { x: 480, y: 486, a: 360, b: 190 };
+    return c.y - c.b * Math.sqrt(Math.max(0, 1 - Math.pow((x - c.x) / c.a, 2)));
+  }
+  var LAND = {
+    3: { cx: [300, 480, 660], turn: [3, 0, -3], k: 1 },
+    4: { cx: [255, 405, 555, 705], turn: [3, 2, -2, -3], k: 1 },
+    5: { cx: [180, 330, 480, 630, 780], turn: [4, 3, 0, -3, -4], k: 1 }
   };
-  var SLOTS = {
-    b3l: { cx: 300, turn: 3 },  b3c: { cx: 480, turn: 0 },  b3r: { cx: 660, turn: -3 },
-    b4a: { cx: 255, turn: 3 },  b4b: { cx: 405, turn: 2 },  b4c: { cx: 555, turn: -2 }, b4d: { cx: 705, turn: -3 },
-    b5a: { cx: 180, turn: 4 },  b5b: { cx: 330, turn: 3 },  b5c: { cx: 480, turn: 0 },  b5d: { cx: 630, turn: -3 }, b5e: { cx: 780, turn: -4 }
+  var PORT = {
+    3: { cx: [140, 300, 460], turn: [3, 0, -3], k: 1 },
+    4: { cx: [90, 230, 370, 510], turn: [3, 2, -2, -3], k: 0.94 },
+    5: { cx: [60, 180, 300, 420, 540], turn: [4, 3, 0, -3, -4], k: 0.82 }
   };
 
   function buildPeople() {
     peopleEl.textContent = ''; platesEl.textContent = ''; personEls = {};
-    var ps = S.scenario.people, set = SLOT_SETS[ps.length];
+    var ps = S.scenario.people, lay = (PANEL ? PORT : LAND)[ps.length], k = lay.k;
     ps.forEach(function (p, i) {
-      var slot = SLOTS[set[i]];
-      var cx = slot.cx, top = Math.round(edgeY(cx) - 164);
+      var cx = lay.cx[i], turn = lay.turn[i];
+      var edge = edgeY(cx);
+      // Zeile 82 der Figur soll genau an der Tischkante liegen (Skalierung am unteren Rand)
+      var top = Math.round(edge + 16 * k - 180);
       var btn = el('button', { 'class': 'person', type: 'button', 'aria-label': 'Mit ' + p.name + ' sprechen' }, peopleEl);
       btn.style.left = (cx - 72) + 'px';
       btn.style.top = top + 'px';
+      if (k !== 1) { btn.style.scale = String(k); btn.style.transformOrigin = '50% 100%'; }
       btn.style.animationDelay = (-i * 0.9) + 's';
       var canvas = el('canvas', null, btn);
       var badge = el('span', { 'class': 'badge' }, btn);
-      personEls[p.id] = { btn: btn, canvas: canvas, badge: badge, person: p, cx: cx, side: false, turn: slot.turn, bubbleBottom: top - 4 };
-      Q.drawPerson(canvas, p.look, 'neutral', slot.turn);
+      personEls[p.id] = { btn: btn, canvas: canvas, badge: badge, person: p, cx: cx, side: false, turn: turn, bubbleBottom: top + 180 - 180 * k - 4 };
+      Q.drawPerson(canvas, p.look, S.resultMood && S.resultMood[p.id] || 'neutral', turn);
       btn.addEventListener('click', function () { speak(p); });
       var plate = el('div', { 'class': 'plate' }, platesEl);
-      plate.style.left = (cx - 78) + 'px'; plate.style.top = Math.round(edgeY(cx) + 8) + 'px';
+      plate.style.left = (cx - 78) + 'px'; plate.style.top = Math.round(edge + 8) + 'px';
+      if (k !== 1) { plate.style.scale = String(k); plate.style.transformOrigin = '50% 0'; }
       plate.textContent = p.name;
       el('small', null, plate, p.role);
     });
   }
 
-  function computeCrop() {
-    var xs = Object.keys(personEls).map(function (id) { return personEls[id].cx; });
-    var minX = Math.min.apply(null, xs) - 95, maxX = Math.max.apply(null, xs) + 95;
-    var w = Math.min(STAGE_W, Math.max(560, maxX - minX));
-    var x = Math.max(0, Math.min(STAGE_W - w, (minX + maxX) / 2 - w / 2));
-    var h = Math.max.apply(null, xs.map(edgeY)) + 62;
-    CROP = { x: x, w: w, h: Math.round(h) };
-    fit();
-  }
-
-  /* Hochformat (Smartphone): Szene oben als Ausschnitt, das Poster darunter in voller Breite. */
+  /* Hochformat (Smartphone): schmale Bühne, Tisch und Poster füllen die Breite. */
   var portraitMQ = window.matchMedia('(max-width: 800px) and (orientation: portrait)');
-  var panelHolder = $('#panelHolder');
   function applyLayout() {
     var p = portraitMQ.matches;
     if (p !== PANEL) {
-      if (p) {
-        closeFull(); PANEL = true;
-        document.body.classList.add('portrait');
-        panelHolder.appendChild(radar); buildRadar(true);
-      } else {
-        PANEL = false;
-        document.body.classList.remove('portrait');
-        $('#poster').appendChild(radar); buildRadar(false);
-      }
-      renderRadar();
+      closeFull();
+      PANEL = p;
+      document.body.classList.toggle('portrait', p);
+      buildRadar(p); renderRadar();
+      if (S.scenario) { clearBubbles(); buildPeople(); updatePeopleBadges(); }
     }
     fit();
   }
@@ -483,6 +474,7 @@
       setTimeout(function () {
         if (S.phase !== 'result' || S.scenario !== sc) return;
         setMood(p.id, mood);
+        S.resultMood[p.id] = mood;
         var e = personEls[p.id];
         e.btn.classList.remove('hop', 'shake');
         void e.btn.offsetWidth;
@@ -539,7 +531,8 @@
     closeFull();
     document.querySelectorAll('#radar .seg').forEach(function (s) { s.classList.remove('locked'); });
     $('#fullSubmit').textContent = 'Einschätzung abgeben'; $('#fullLegend').hidden = true;
-    buildPeople(); computeCrop(); renderRadar(); renderNotes(); updatePeopleBadges(); showReadout(null);
+    S.resultMood = {};
+    buildPeople(); renderRadar(); renderNotes(); updatePeopleBadges(); showReadout(null);
     setStatus('');
     $('#orderText').innerHTML = '';
     el('b', null, $('#orderText'), sc.title + ' – ' + sc.subtitle);
@@ -596,8 +589,8 @@
 
   buildRadar();
   S.scenario = Q.SCENARIOS[0];
-  buildPeople(); computeCrop(); renderRadar(); renderNotes(); resetSpeech();
   applyLayout();
+  buildPeople(); renderRadar(); renderNotes(); resetSpeech();
   showTitle();
 
   Q._start = startScenario;
