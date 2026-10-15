@@ -69,298 +69,301 @@ window.QW = window.QW || {};
   function or(a, b) { return function (x, y) { return a(x, y) || b(x, y); }; }
 
   /* ---------- Geometrie ---------- */
-  var HCX = 36, HCY = 29, HRX = 15.5, HRY = 18.5;
+  var HCX = 36, HCY = 33, HRX = 23.5, HRY = 26;
+  var EY = 34, EX1 = 26, EX2 = 46, MY = 51;
+  var FX = 0;   // seitliche Verschiebung der Gesichtszüge (Blickrichtung zum Tisch)
   function inHead(x, y) {
     var X = x - HCX, Y = y - HCY;
-    var rx = HRX * (1 - 0.1 * clamp((y - 30) / 16, 0, 1));
+    var rx = HRX * (1 - 0.1 * clamp((y - 36) / 22, 0, 1));
     return (X / rx) * (X / rx) + (Y / HRY) * (Y / HRY) <= 1;
   }
   function faceT(x, y) {
     var nx = (x - HCX) / HRX, ny = (y - HCY) / HRY;
     var nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
-    return 0.3 + 0.62 * (-0.45 * nx - 0.5 * ny + 0.75 * nz);
+    return 0.28 + 0.7 * (-0.5 * nx - 0.55 * ny + 0.7 * nz);
   }
   function hairline(x, style) {
     var dx = Math.abs(x - HCX);
-    var y = 16 + Math.max(0, dx - 8) * 2.4;
-    if (style === 'short' && x < 33) y += 4;
-    if (style === 'long' && dx < 1.6) y += 3;
+    var y = 16 + Math.max(0, dx - 12) * 1.9;
+    if (style === 'short') { y += (x < 31 ? 5 : 0) + 1.5 * Math.sin(x * 0.7); }
+    if (style === 'long' && dx < 2) y += 4;
     return y;
   }
-  function torsoHalf(y) { return 12 + 16 * (1 - Math.exp(-(y - 54) / 5)); }
+  function torsoHalf(y) { return 14 + 15 * (1 - Math.exp(-(y - 60) / 4)); }
+
+  /* Drei Farbtöne, harte Kanten, nur an den Übergängen ein Dither-Streifen (Cel-Look). */
+  function ramp3(c, dark) {
+    dark = dark == null ? 0.42 : dark;
+    return [mix(c, SH, dark), c, mix(c, HI, 0.32)];
+  }
+  function cel(r, t, x, y) {
+    var a = 0.36, b = 0.74, w = 0.05, chk = (x + y) & 1;
+    if (t < a - w) return r[0];
+    if (t < a + w) return chk ? r[1] : r[0];
+    if (t < b - w) return r[1];
+    if (t < b + w) return chk ? r[2] : r[1];
+    return r[2];
+  }
 
   /* ---------- Einzelteile ---------- */
   function drawHairBack(g, look) {
     if (look.hairStyle !== 'long') return;
-    var r = ramp(look.hair, 0.7);
-    layer(g, ell(36, 42, 21.5, 31), function (x, y) { return tone(r, 0.3 + 0.1 * Math.sin(x * 0.6 + y * 0.2), x, y); }, r[0]);
+    var r = ramp3(look.hair, 0.55);
+    layer(g, ell(36, 46, 27, 36), function (x, y) { return cel(r, 0.3 + 0.06 * Math.sin(x * 0.5), x, y); }, r[0]);
   }
 
   function hairColorFn(r) {
     return function (x, y) {
-      var t = 0.58 - 0.012 * (x - 36) - 0.008 * (Math.min(y, 44) - 10) + 0.14 * Math.sin(x * 0.5 + y * 0.28);
-      if ((x * 2 + y) % 6 === 0) t -= 0.2;
-      if (y >= 11 && y <= 13 && x > 26 && x < 46) t += 0.25;
-      return tone(r, t, x, y);
+      var t = 0.5 - 0.02 * (x - 36) - 0.012 * (Math.min(y, 44) - 10) + 0.12 * Math.sin(x * 0.45 + y * 0.3);
+      if ((x * 2 + y) % 7 === 0) t -= 0.28;
+      if (y >= 9 && y <= 13 && x > 22 && x < 44) t += 0.3;
+      return cel(r, t, x, y);
     };
   }
 
   function drawHairFront(g, look) {
-    var st = look.hairStyle, r = ramp(look.hair, 0.65), col = hairColorFn(r);
-    function sideburn(x, y) { return Math.abs(x - 36) > 13.6 && y > 22 && y < 36 && inHead(x, y); }
+    var st = look.hairStyle, r = ramp3(look.hair, 0.55), col = hairColorFn(r);
     if (st === 'bald') return;
+    function sideburn(x, y) { return Math.abs(x - 36) > 20.2 && y > 26 && y < 42 && inHead(x, y); }
     var big;
     if (st === 'curly') {
       big = function (x, y) {
-        var X = x - 36, Y = y - 24, a = Math.atan2(Y, X);
-        var k = 1 + 0.08 * Math.sin(a * 9);
-        return (X / 22) * (X / 22) + (Y / 23) * (Y / 23) <= k * k && y < 40;
+        var X = x - 36, Y = y - 26, a = Math.atan2(Y, X);
+        var k = 1 + 0.07 * Math.sin(a * 9);
+        return (X / 31) * (X / 31) + (Y / 30) * (Y / 30) <= k * k && y < 46;
       };
     } else if (st === 'bun') {
-      big = or(and(ell(36, 29, 17.8, 20.8), function (x, y) { return y < 36; }), ell(36, 6.5, 7, 6));
+      big = or(and(ell(36, 33, 25.8, 28.4), function (x, y) { return y < 42; }), ell(36, 6.5, 8, 6));
     } else {
-      big = and(ell(36, 29, 17.8, 20.8), function (x, y) { return y < 37; });
+      big = and(ell(36, 33, 25.8, 28.4), function (x, y) { return y < 44; });
     }
     layer(g, function (x, y) {
       if (!big(x, y)) return false;
       if (!inHead(x, y)) return true;
       return y < hairline(x, st) || sideburn(x, y);
     }, col, r[0]);
-    if (st === 'bun') {
-      // Haargummi
-      layer(g, ell(36, 12.5, 5.2, 1.4), function () { return look.shirt; }, null);
-    }
+    if (st === 'bun') layer(g, ell(36, 14.5, 7, 1.6), function () { return look.shirt; }, null);
     if (st === 'long') {
       layer(g, function (x, y) {
         var dx = Math.abs(x - 36);
-        return dx >= 14 && dx <= 19 && y >= 30 && y <= 64 - (dx - 14) * 2 && !inHead(x, y);
+        return dx >= 21 && dx <= 27 && y >= 36 && y <= 78 - (dx - 21) * 2.5 && !inHead(x, y);
       }, col, r[0]);
     }
   }
 
+  function skinBase(look, mood) { return mood === 'angry' ? mix(look.skin, '#e04030', 0.4) : look.skin; }
+
   function drawNeck(g, look, mood) {
-    var r = ramp(mood === 'angry' ? mix(look.skin, '#e04030', 0.4) : look.skin, 0.62);
-    layer(g, function (x, y) { return x > 30 && x < 42 && y > 42 && y < 62; }, function (x, y) {
-      var t = 0.42 - (x - 36) * 0.012 + (y - 44) * 0.002;
-      if (y < 52) t -= 0.2;   // Kinnschatten
-      return tone(r, t, x, y);
+    var r = ramp3(skinBase(look, mood), 0.5);
+    layer(g, function (x, y) { return x > 29 && x < 43 && y > 52 && y < 66; }, function (x, y) {
+      return y < 62 ? r[0] : cel(r, 0.45 - (x - 36) * 0.02, x, y);
     }, null);
   }
 
   function drawTorso(g, look) {
     var outfit = look.outfit || (look.extras.indexOf('tie') >= 0 ? 'suit' : 'shirt');
-    var r = ramp(look.shirt, 0.55);
+    var r = ramp3(look.shirt, 0.5);
     var hole = null;
-    if (outfit === 'shirt') hole = tri([29.5, 52], [42.5, 52], [36, 67]);
-    if (outfit === 'tshirt') hole = ell(36, 53.5, 8.4, 6.2);
-    if (outfit === 'suit') hole = tri([30, 52], [42, 52], [36, 66]);
-    if (outfit === 'coat') hole = tri([27, 52], [45, 52], [36, 77]);
-    var inTorso = function (x, y) { return y >= 53 && Math.abs(x - 36) <= torsoHalf(y); };
+    if (outfit === 'shirt') hole = tri([29, 58], [43, 58], [36, 72]);
+    if (outfit === 'tshirt') hole = ell(36, 60, 9.5, 6.5);
+    if (outfit === 'suit') hole = tri([30, 58], [42, 58], [36, 70]);
+    if (outfit === 'coat') hole = tri([26, 58], [46, 58], [36, 80]);
+    var inTorso = function (x, y) { return y >= 58 && Math.abs(x - 36) <= torsoHalf(y); };
     layer(g, hole ? and(inTorso, not(hole)) : inTorso, function (x, y) {
-      var X = x - 36;
-      var t = 0.58 - 0.28 * (X / 33) - 0.1 * ((y - 54) / 30) + 0.07 * Math.sin(X * 0.5 + y * 0.13) + 0.06 * Math.sin(y * 0.45 - X * 0.2);
-      var ax = Math.abs(X);
-      if (ax > 21 && y > 62) t -= 0.35 * ((ax - 21) / 7);
-      var seam = Math.abs(ax - (19 + (y - 58) * 0.1));
-      if (y > 58 && seam < 0.7) t -= 0.3;
-      return tone(r, t, x, y);
+      var X = x - 36, ax = Math.abs(X);
+      var t = 0.6 - 0.32 * (X / 30) + 0.05 * Math.sin(X * 0.45 + y * 0.2);
+      if (ax > 21 && y > 66) t -= 0.35;
+      var seam = Math.abs(ax - (19 + (y - 62) * 0.15));
+      if (y > 62 && seam < 0.8) t -= 0.35;
+      return cel(r, t, x, y);
     }, r[0]);
 
-    var white = ramp('#f4f4f8', 0.35);
+    var white = ramp3('#f4f4f8', 0.3);
     if (outfit === 'shirt') {
-      var cc = ramp(mix(look.shirt, '#ffffff', 0.6), 0.4);
-      var cf = function (x, y) { return tone(cc, 0.62 - (y - 52) * 0.01 - (x - 36) * 0.006, x, y); };
-      layer(g, tri([30, 51], [25.5, 58.5], [36, 68.5]), cf, cc[0]);
-      layer(g, tri([42, 51], [46.5, 58.5], [36, 68.5]), cf, cc[0]);
-      for (var k = 0; k < 3; k++) {
-        layer(g, ell(36, 73 + k * 7, 1.4, 1.4), function (x) { return x < 36 ? r[4] : r[1]; }, null);
-      }
+      var cc = ramp3(mix(look.shirt, '#ffffff', 0.6), 0.35);
+      var cf = function (x, y) { return cel(cc, 0.62 - (x - 36) * 0.02, x, y); };
+      layer(g, tri([30, 55], [24, 64], [36, 74]), cf, cc[0]);
+      layer(g, tri([42, 55], [48, 64], [36, 74]), function (x, y) { return cel(cc, 0.4, x, y); }, cc[0]);
+      layer(g, ell(36, 79, 1.5, 1.5), function () { return r[2]; }, r[0]);
     } else if (outfit === 'suit') {
-      layer(g, tri([31, 52], [41, 52], [36, 79]), function (x, y) { return tone(white, 0.7 - (x - 36) * 0.02, x, y); }, white[0]);
-      var tc = ramp('#c8283a', 0.5);
-      layer(g, tri([34, 61], [38, 61], [36, 81]), function (x, y) { return tone(tc, 0.55 - (x - 36) * 0.1 - (y - 61) * 0.004, x, y); }, tc[0]);
-      layer(g, ell(36, 59, 2.8, 2.4), function (x, y) { return tone(tc, 0.7 - (x - 36) * 0.08, x, y); }, tc[0]);
-      var lf = function (x, y) { return tone(r, 0.66 - (y - 54) * 0.008, x, y); };
-      layer(g, tri([25, 56], [31, 52], [36, 80]), function (x, y) { return x > 33 ? r[1] : lf(x, y); }, r[0]);
-      layer(g, tri([47, 56], [41, 52], [36, 80]), function (x, y) { return x < 39 ? r[1] : r[2]; }, r[0]);
+      layer(g, tri([31, 58], [41, 58], [36, 84]), function (x, y) { return cel(white, 0.7 - (x - 36) * 0.03, x, y); }, white[0]);
+      var tc = ramp3('#c8283a', 0.45);
+      layer(g, tri([33.5, 65], [38.5, 65], [36, 86]), function (x, y) { return cel(tc, 0.62 - (x - 36) * 0.12, x, y); }, tc[0]);
+      layer(g, ell(36, 63, 3.2, 3), function (x, y) { return cel(tc, 0.7 - (x - 36) * 0.1, x, y); }, tc[0]);
+      layer(g, tri([22, 63], [30, 57], [35, 84]), function (x, y) { return cel(r, 0.68, x, y); }, r[0]);
+      layer(g, tri([50, 63], [42, 57], [37, 84]), function (x, y) { return cel(r, 0.45, x, y); }, r[0]);
     } else if (outfit === 'coat') {
-      var under = ramp('#3a8a9a', 0.5);
-      layer(g, tri([28, 53], [44, 53], [36, 76]), function (x, y) { return tone(under, 0.5 - (x - 36) * 0.01, x, y); }, under[0]);
-      var lc = ramp(look.shirt, 0.4);
-      layer(g, tri([22, 57], [29, 52], [36, 77]), function (x, y) { return tone(lc, 0.75 - (y - 54) * 0.01, x, y); }, lc[0]);
-      layer(g, tri([50, 57], [43, 52], [36, 77]), function (x, y) { return tone(lc, 0.6 - (y - 54) * 0.01, x, y); }, lc[0]);
-      layer(g, function (x, y) { return x > 12 && x < 24 && y > 74 && y < 86; }, function (x, y) { return tone(lc, 0.5, x, y); }, lc[0]);
-      put(g, 15, 72, '#2a56c0'); put(g, 15, 73, '#2a56c0'); put(g, 15, 74, '#2a56c0');
-      put(g, 16, 72, '#c0392b'); put(g, 16, 73, '#c0392b'); put(g, 16, 74, '#c0392b');
+      var under = ramp3('#3a8a9a', 0.45);
+      layer(g, tri([28, 59], [44, 59], [36, 78]), function (x, y) { return cel(under, 0.5, x, y); }, under[0]);
+      var lc = ramp3(look.shirt, 0.35);
+      layer(g, tri([19, 63], [27, 57], [36, 79]), function (x, y) { return cel(lc, 0.8, x, y); }, lc[0]);
+      layer(g, tri([53, 63], [45, 57], [36, 79]), function (x, y) { return cel(lc, 0.55, x, y); }, lc[0]);
+      layer(g, function (x, y) { return x > 10 && x < 22 && y > 77 && y < 90; }, function (x, y) { return cel(lc, 0.6, x, y); }, lc[0]);
+      for (var k = 0; k < 4; k++) { put(g, 14, 74 + k, '#2a56c0'); put(g, 15, 74 + k, '#c0392b'); }
     } else if (outfit === 'tshirt') {
-      layer(g, and(function (x, y) { return y >= 50; }, and(ell(36, 53.5, 10, 7.6), not(ell(36, 53.5, 8.4, 6.2)))), function (x, y) { return tone(r, 0.3, x, y); }, null);
-      // Brustaufdruck
-      layer(g, function (x, y) { return y > 70 && y < 78 && Math.abs(x - 36) < 11; }, function (x, y) { return (x + y) % 2 ? '#ffe36b' : '#f4c430'; }, r[0]);
+      layer(g, and(function (x, y) { return y >= 55; }, and(ell(36, 60, 11, 8.2), not(ell(36, 60, 9.5, 6.6)))), function (x, y) { return r[0]; }, null);
+      layer(g, function (x, y) { return y > 74 && y < 82 && Math.abs(x - 36) < 12; }, function (x, y) { return y < 77 ? '#ffe36b' : '#e8b020'; }, r[0]);
     }
   }
 
   function drawEars(g, look, mood) {
-    var r = ramp(mood === 'angry' ? mix(look.skin, '#e04030', 0.4) : look.skin, 0.6);
-    [20.5, 51.5].forEach(function (cx, i) {
-      layer(g, ell(cx, 30.5, 3, 4.6), function (x, y) { return tone(r, 0.45 + (i ? -0.08 : 0.08), x, y); }, r[0]);
-      put(g, Math.floor(cx + (i ? -1 : 1)), 30, r[1]); put(g, Math.floor(cx + (i ? -1 : 1)), 31, r[1]);
+    var r = ramp3(skinBase(look, mood), 0.5);
+    [12.5, 59.5].forEach(function (cx, i) {
+      layer(g, ell(cx, 36, 3.6, 5.6), function (x, y) { return i ? r[0] : r[1]; }, r[0]);
+      put(g, Math.floor(cx + (i ? -1 : 1)), 35, r[0]); put(g, Math.floor(cx + (i ? -1 : 1)), 37, r[0]);
     });
   }
 
   function drawHead(g, look, mood) {
-    var base = mood === 'angry' ? mix(look.skin, '#e04030', 0.4) : look.skin;
-    var r = ramp(base, 0.55);
-    layer(g, inHead, function (x, y) { return tone(r, faceT(x + 0.5, y + 0.5), x, y); }, null);
+    var r = ramp3(skinBase(look, mood), 0.5);
+    layer(g, inHead, function (x, y) { return cel(r, faceT(x + 0.5, y + 0.5), x, y); }, null);
     return r;
   }
 
   function drawNose(g, r) {
-    // Nasenrücken hell (Licht von links oben), rechts Schatten, Spitze und Unterseite dunkel
-    for (var y = 29; y <= 34; y++) { put(g, 35, y, r[4]); put(g, 38, y, r[1]); }
-    put(g, 35, 35, r[4]); put(g, 36, 35, r[3]); put(g, 37, 35, r[2]);
-    layer(g, ell(36, 36.6, 3.6, 1.6), function (x, y) { return tone(r, 0.22, x, y); }, null);
-    put(g, 34, 36, r[0]); put(g, 37, 36, r[0]);
+    var cx = 36 + FX, nose = ell(cx, 43, 4.6, 3.8), ring = ell(cx, 43, 5.6, 4.8);
+    layer(g, nose, function (x, y) { return cel(r, 0.62 - (x - cx) * 0.09 - (y - 43) * 0.05, x, y); }, null);
+    for (var x = cx - 5; x <= cx + 5; x++) for (var y = 38; y <= 47; y++) {
+      if (get(g, x, y) && !nose(x + 0.5, y + 0.5) && ring(x + 0.5, y + 0.5) && y > 43) put(g, x, y, r[0]);
+    }
+    put(g, cx - 2, 44, r[0]); put(g, cx + 1, 44, r[0]); put(g, cx - 1, 44, r[0]); put(g, cx + 2, 44, r[0]);
+    for (var yy = 36; yy <= 40; yy++) put(g, cx - 1, yy, r[2]);
   }
 
   function drawEye(g, ex, ey, mood, side, look, r) {
     var inner = -side;
-    var iris = ramp(look.iris || '#5a3a20', 0.6);
-    var skinDark = r[1];
-    function arc(dx, k) { return Math.round(k * (1 - (dx * dx) / 17.6)); }
+    var iris = ramp3(look.iris || '#5a3a20', 0.5);
+    var skinDark = r[0];
+    function arc(dx, k) { return Math.round(k * (1 - (dx * dx) / 30)); }
     var dx, x, y;
     if (mood === 'happy') {
-      for (dx = -4; dx <= 4; dx++) {
-        var yy = Math.round(ey + 1 - arc(dx, 2.6));
-        put(g, Math.round(ex + dx - 0.5), yy, INK); put(g, Math.round(ex + dx - 0.5), yy + 1, '#4a1a1a');
+      for (dx = -5; dx <= 5; dx++) {
+        var yy = Math.round(ey + 1.5 - arc(dx, 3.4));
+        put(g, Math.round(ex + dx - 0.5), yy, INK); put(g, Math.round(ex + dx - 0.5), yy + 1, INK);
       }
       return;
     }
     if (mood === 'blink') {
-      for (dx = -4; dx <= 4; dx++) { put(g, Math.round(ex + dx - 0.5), Math.round(ey + arc(dx, 1.2)), INK); }
+      for (dx = -5; dx <= 5; dx++) { put(g, Math.round(ex + dx - 0.5), Math.round(ey + arc(dx, 1.6)), INK); put(g, Math.round(ex + dx - 0.5), Math.round(ey + arc(dx, 1.6)) + 1, '#4a2030'); }
       return;
     }
-    var inEye = ell(ex, ey, 4.3, 3.3);
-    layer(g, inEye, function (x, y) { return y + 0.5 < ey ? '#d6d8e8' : '#fbfbff'; }, null);
-    // Iris und Pupille
-    var ir = mood === 'angry' ? 1.9 : 2.4;
-    var icx = ex + inner * 0.4, icy = ey + (mood === 'meh' ? 0.2 : 0.4);
-    layer(g, ell(icx, icy, ir, ir), function (x, y) { return tone(iris, 0.3 + (y - (icy - ir)) * 0.14, x, y); }, null);
-    layer(g, ell(icx, icy, 1, 1.2), function () { return '#0c0a14'; }, null);
-    put(g, Math.floor(icx - 1), Math.floor(icy - 1.4), '#ffffff');
-    // Lid
+    var inEye = ell(ex, ey, 5.6, 4.6);
+    layer(g, inEye, function (x, y) { return y + 0.5 < ey - 1 ? '#d2d6ea' : '#ffffff'; }, null);
+    var ir = mood === 'angry' ? 2.8 : 3.3;
+    var icx = ex + inner * 0.7, icy = ey + (mood === 'meh' ? 0.4 : 0.8);
+    layer(g, and(ell(icx, icy, ir, ir), inEye), function (x, y) { return y + 0.5 > icy + 1 ? iris[2] : iris[1]; }, iris[0]);
+    layer(g, ell(icx, icy, 1.6, 1.9), function () { return '#0c0a14'; }, null);
+    put(g, Math.floor(icx - 1.6), Math.floor(icy - 2), '#ffffff'); put(g, Math.floor(icx - 0.6), Math.floor(icy - 2), '#ffffff');
+    put(g, Math.floor(icx - 1.6), Math.floor(icy - 1), '#ffffff');
     var lidY = null;
-    if (mood === 'meh') lidY = function () { return ey - 0.6; };
-    if (mood === 'angry') lidY = function (px) { var s = clamp(((px - ex) * inner + 4.3) / 8.6, 0, 1); return ey - 3.2 + 3.6 * s; };
-    for (x = Math.floor(ex - 5); x <= Math.ceil(ex + 5); x++) for (y = Math.floor(ey - 4); y <= Math.ceil(ey + 4); y++) {
+    if (mood === 'meh') lidY = function () { return ey - 0.9; };
+    if (mood === 'angry') lidY = function (px) { var s = clamp(((px - ex) * inner + 5.6) / 11.2, 0, 1); return ey - 4.2 + 4.8 * s; };
+    for (x = Math.floor(ex - 7); x <= Math.ceil(ex + 7); x++) for (y = Math.floor(ey - 6); y <= Math.ceil(ey + 6); y++) {
       if (!inEye(x + 0.5, y + 0.5)) {
-        // Wimpernlinie oben um das Auge
-        if (inEye(x + 0.5, y + 1.5) && y + 0.5 < ey) put(g, x, y, '#3a1a28');
+        if (inEye(x + 0.5, y + 1.5) && y + 0.5 < ey) put(g, x, y, INK);
         continue;
       }
       if (lidY) {
         var ly = lidY(x + 0.5);
         if (y + 0.5 < ly) put(g, x, y, skinDark);
-        else if (y + 0.5 < ly + 1) put(g, x, y, '#2a1020');
+        else if (y + 0.5 < ly + 1.2) put(g, x, y, INK);
       }
     }
   }
 
   function drawBrow(g, ex, ey, mood, side, look) {
-    var browC = look.hair === '#8a8a8a' ? '#5a5a5a' : mix(look.hair, '#000000', 0.25);
-    var inner = -side, thick = mood === 'angry' ? 3 : 2;
-    for (var dx = -5; dx <= 4; dx++) {
-      var px = ex + dx + 0.5, s = clamp(((px - ex) * inner + 4.8) / 9.6, 0, 1);
-      var a = Math.round(1.2 * (1 - Math.pow((px - ex) / 4.8, 2)));
+    var browC = look.hair === '#8a8a8a' ? '#5a5a5a' : mix(look.hair, '#000000', 0.3);
+    var inner = -side, thick = mood === 'angry' ? 4 : 3;
+    for (var dx = -6; dx <= 5; dx++) {
+      var px = ex + dx + 0.5, s = clamp(((px - ex) * inner + 6) / 12, 0, 1);
+      var a = Math.round(1.6 * (1 - Math.pow((px - ex) / 6, 2)));
       var off;
-      if (mood === 'angry') off = -9.4 + 4.6 * s;
-      else if (mood === 'happy') off = -9.5 - a;
-      else if (mood === 'meh') off = side > 0 ? -9 - 2 * s - a : -7.2 - 0.4 * s;
-      else off = -7.4 - a;
+      if (mood === 'angry') off = -11.5 + 5.5 * s;
+      else if (mood === 'happy') off = -11.5 - a;
+      else if (mood === 'meh') off = side > 0 ? -11 - 3 * s - a : -9 - 0.5 * s;
+      else off = -9 - a;
       var y0 = Math.round(ey + off), x0 = Math.floor(px);
-      for (var k = 0; k < thick; k++) put(g, x0, y0 + k, k === 0 && mood !== 'angry' ? mix(browC, HI, 0.15) : browC);
+      for (var k = 0; k < thick; k++) put(g, x0, y0 + k, k === 0 ? mix(browC, HI, 0.18) : browC);
     }
   }
 
-  function drawMouth(g, look, mood, beard, skinR) {
-    var mx = 36, my = 42;
-    var lip = beard ? '#d89088' : mix(look.skin, '#b03040', 0.45);
-    var dark = '#4a1a22', inside = '#7a1a28';
-    var dx, x, y;
+  function drawMouth(g, look, mood, beard) {
+    var mx = 36 + FX, my = MY;
+    var lip = beard ? '#e09088' : mix(look.skin, '#b03040', 0.5);
+    var dark = '#3a1018', inside = '#7a1a28';
+    var dx, y, xx;
     if (mood === 'happy') {
-      for (dx = -7; dx <= 7; dx++) {
-        var uy = my - Math.round(2.2 * dx * dx / 49);
-        var ly = uy + Math.round(4.4 * (1 - dx * dx / 49));
-        x = mx + dx - (dx >= 0 ? 0 : 0);
-        var xx = dx < 0 ? mx + dx : mx + dx - 1 + 1;
+      for (dx = -9; dx <= 9; dx++) {
+        var uy = my - Math.round(3 * dx * dx / 81);
+        var ly = uy + Math.round(6.4 * (1 - dx * dx / 81));
         xx = Math.round(mx + dx - 0.5);
         put(g, xx, uy - 1, dark);
-        for (y = uy; y <= ly; y++) put(g, xx, y, (y - uy < 2) ? '#fafaff' : inside);
+        for (y = uy; y <= ly; y++) put(g, xx, y, (y - uy < 3) ? '#fafaff' : inside);
         put(g, xx, ly + 1, dark);
-        if (ly - uy >= 3 && Math.abs(dx) < 3) put(g, xx, ly, '#d05060');
+        if (ly - uy >= 5 && Math.abs(dx) < 4) { put(g, xx, ly, '#e05a6a'); put(g, xx, ly - 1, '#e05a6a'); }
       }
       return;
     }
     if (mood === 'talk') {
-      layer(g, ell(mx, my + 1.5, 4.6, 3.6), function (x, y) {
+      layer(g, ell(mx, my + 2, 6.4, 4.8), function (x, y) {
         if (y + 0.5 < my - 0.5) return '#fafaff';
-        if (y + 0.5 > my + 3) return '#d05060';
+        if (y + 0.5 > my + 4) return '#e05a6a';
         return inside;
       }, dark);
       return;
     }
     if (mood === 'angry') {
-      // zusammengebissene Zähne
-      layer(g, function (x, y) { return Math.abs(x - mx) < 6 && y > my - 2.5 && y < my + 2.5; }, function (x, y) { return (x % 2) ? '#fafaff' : '#c8c8d8'; }, dark);
-      for (dx = -6; dx <= 5; dx++) put(g, Math.round(mx + dx), my, dark);
-      put(g, mx - 7, my + 2, dark); put(g, mx + 6, my + 2, dark);
+      layer(g, function (x, y) { return Math.abs(x - mx) < 8 && y > my - 3 && y < my + 3.5; }, function (x, y) { return (x % 3 === 0) ? '#b8b8cc' : '#fafaff'; }, dark);
+      for (dx = -8; dx <= 7; dx++) put(g, Math.round(mx + dx), my, dark);
+      put(g, mx - 9, my + 3, dark); put(g, mx + 8, my + 3, dark); put(g, mx - 9, my + 2, dark); put(g, mx + 8, my + 2, dark);
       return;
     }
     if (mood === 'meh') {
-      for (dx = -5; dx <= 5; dx++) put(g, Math.round(mx + dx - 0.5), Math.round(my + 1 - dx * 0.25), dark);
-      for (dx = -3; dx <= 3; dx++) put(g, Math.round(mx + dx - 0.5), Math.round(my + 2 - dx * 0.25), lip);
+      for (dx = -7; dx <= 7; dx++) { xx = Math.round(mx + dx - 0.5); put(g, xx, Math.round(my + 1 - dx * 0.25), dark); put(g, xx, Math.round(my + 2 - dx * 0.25), dark); }
+      for (dx = -4; dx <= 4; dx++) put(g, Math.round(mx + dx - 0.5), Math.round(my + 3 - dx * 0.25), lip);
       return;
     }
-    // neutral / blink
-    for (dx = -5; dx <= 5; dx++) put(g, Math.round(mx + dx - 0.5), my, dark);
-    for (dx = -3; dx <= 3; dx++) { put(g, Math.round(mx + dx - 0.5), my + 1, lip); put(g, Math.round(mx + dx - 0.5), my - 1, mix(lip, SH, 0.1)); }
-    put(g, mx - 6, my - 1, dark); put(g, mx + 5, my - 1, dark);
+    for (dx = -7; dx <= 7; dx++) { xx = Math.round(mx + dx - 0.5); put(g, xx, my, dark); put(g, xx, my + 1, dark); }
+    for (dx = -5; dx <= 5; dx++) { put(g, Math.round(mx + dx - 0.5), my + 2, lip); put(g, Math.round(mx + dx - 0.5), my + 3, lip); }
+    for (dx = -4; dx <= 4; dx++) put(g, Math.round(mx + dx - 0.5), my - 1, mix(lip, SH, 0.15));
+    put(g, mx - 8, my - 1, dark); put(g, mx + 7, my - 1, dark);
   }
 
   function drawBeard(g, look) {
-    var r = ramp(look.hair === '#8a8a8a' ? '#9a9a9a' : look.hair, 0.6);
-    var big = ell(36, 29, 16.4, 19.4);
+    var r = ramp3(look.hair === '#8a8a8a' ? '#9a9a9a' : look.hair, 0.5);
+    var big = ell(36, 33, 24.4, 26.4);
     layer(g, function (x, y) {
       if (!big(x, y)) return false;
       var dx = Math.abs(x - 36);
-      if (dx < 8 && y >= 37) return !(y < 40 && dx < 2.5 && false);
-      return y > 34 + clamp(8 - dx, 0, 8) * 0.45 && dx >= 8;
+      if (dx < 11) return y >= 46;
+      return y > 42;
     }, function (x, y) {
-      var t = 0.5 - 0.01 * (x - 36) + 0.12 * Math.sin(x * 0.9 + y * 0.5);
-      if ((x + y * 2) % 5 === 0) t -= 0.18;
-      return tone(r, t, x, y);
+      var t = 0.5 - 0.02 * (x - 36) + 0.14 * Math.sin(x * 0.8 + y * 0.5);
+      if ((x + y * 2) % 6 === 0) t -= 0.3;
+      return cel(r, t, x, y);
     }, null);
   }
 
   function drawGlasses(g, look, ex1, ex2, ey) {
-    var f = '#241a30', fl = '#5a4a70';
+    var f = '#241a30', fl = '#6a5a80';
     [ex1, ex2].forEach(function (ex) {
-      var x0 = Math.floor(ex - 5.5), x1 = Math.floor(ex + 5.5), y0 = Math.floor(ey - 4.5), y1 = Math.floor(ey + 4.5);
+      var x0 = Math.floor(ex - 7), x1 = Math.floor(ex + 7), y0 = Math.floor(ey - 6), y1 = Math.floor(ey + 6);
       for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) {
-        var corner = (x === x0 || x === x1) && (y === y0 || y === y1);
+        var corner = (x <= x0 + 1 && (y === y0 || y === y1) && x === x0) || (x === x1 && (y === y0 || y === y1));
         if (corner) continue;
         var edge = x === x0 || x === x1 || y === y0 || y === y1;
-        if (edge) put(g, x, y, (y === y0 && x < ex) ? fl : f);
+        if (edge) { put(g, x, y, (y === y0 && x < ex) ? fl : f); if (y === y0 || y === y1) { /* dicker Rahmen oben */ } }
         else {
           var c = get(g, x, y);
-          if (c) put(g, x, y, mix(c, '#a8d4ff', 0.2));
+          if (c) put(g, x, y, mix(c, '#a8d4ff', 0.18));
         }
       }
-      put(g, x0 + 2, y0 + 2, '#ffffff'); put(g, x0 + 3, y0 + 3, '#ffffff'); put(g, x0 + 2, y0 + 3, '#e8f4ff');
+      for (x = x0 + 1; x <= x1 - 1; x++) put(g, x, y0 + 1, f);
+      put(g, x0 + 2, y0 + 3, '#ffffff'); put(g, x0 + 3, y0 + 4, '#ffffff'); put(g, x0 + 2, y0 + 4, '#e8f4ff');
     });
-    var b0 = Math.floor(ex1 + 5.5), b1 = Math.floor(ex2 - 5.5);
-    for (var x = b0; x <= b1; x++) put(g, x, Math.floor(ey - 1.5), f);
-    line(g, Math.floor(ex1 - 5.5), Math.floor(ey - 2), 22, Math.floor(ey - 1), f);
-    line(g, Math.floor(ex2 + 5.5), Math.floor(ey - 2), 50, Math.floor(ey - 1), f);
+    for (var x = Math.floor(ex1 + 7); x <= Math.floor(ex2 - 7); x++) { put(g, x, Math.floor(ey - 2), f); put(g, x, Math.floor(ey - 1), f); }
+    line(g, Math.floor(ex1 - 7), Math.floor(ey - 3), 14, Math.floor(ey - 2), f);
+    line(g, Math.floor(ex2 + 7), Math.floor(ey - 3), 58, Math.floor(ey - 2), f);
   }
 
   function outlineAll(g) {
@@ -368,15 +371,16 @@ window.QW = window.QW || {};
     for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
       if (g[y][x]) continue;
       var n = (y > 0 && g[y - 1][x]) || (y < H - 1 && g[y + 1][x]) || (x > 0 && g[y][x - 1]) || (x < W - 1 && g[y][x + 1]);
-      if (n) add.push([x, y, mix(n, INK, 0.75)]);
+      if (n) add.push([x, y, mix(n, INK, 0.8)]);
     }
     add.forEach(function (a) { g[a[1]][a[0]] = a[2]; });
   }
 
   /* ---------- Zusammenbau ---------- */
   var cache = {};
-  function render(look, mood) {
-    var key = JSON.stringify(look) + '|' + mood;
+  function render(look, mood, turn) {
+    FX = turn || 0;
+    var key = JSON.stringify(look) + '|' + mood + '|' + FX;
     if (cache[key]) return cache[key];
     var g = newGrid();
     var beard = look.extras.indexOf('beard') >= 0;
@@ -386,26 +390,26 @@ window.QW = window.QW || {};
     drawEars(g, look, mood);
     var r = drawHead(g, look, mood);
     if (mood === 'happy') {
-      var pink = mix(look.skin, '#ff5a6a', 0.45);
-      [[25.5, 37], [46.5, 37]].forEach(function (c) {
-        layer(g, ell(c[0], c[1], 3.6, 2.2), function (x, y) { return (x + y) % 2 === 0 ? pink : get(g, x, y); }, null);
+      var pink = mix(look.skin, '#ff5a6a', 0.5);
+      [[22.5 + FX, 45], [49.5 + FX, 45]].forEach(function (c) {
+        layer(g, ell(c[0], c[1], 4.4, 2.8), function (x, y) { return pink; }, null);
       });
     }
     drawNose(g, r);
-    var ey = 29, ex1 = 28.5, ex2 = 43.5;
+    var ey = EY, ex1 = EX1 + FX, ex2 = EX2 + FX;
     drawEye(g, ex1, ey, mood, -1, look, r);
     drawEye(g, ex2, ey, mood, 1, look, r);
     drawBrow(g, ex1, ey, mood, -1, look);
     drawBrow(g, ex2, ey, mood, 1, look);
     if (beard) drawBeard(g, look);
-    drawMouth(g, look, mood, beard, r);
+    drawMouth(g, look, mood, beard);
     drawHairFront(g, look);
     if (look.extras.indexOf('glasses') >= 0) drawGlasses(g, look, ex1, ex2, ey);
     outlineAll(g);
     if (mood === 'angry') {
       var rc = '#e02828', rd = '#8a1010';
       [[0, 0], [1, 0], [0, 1], [3, 0], [3, 1], [4, 1], [1, 2], [2, 2], [4, 2], [0, 3], [1, 3], [3, 3], [4, 3], [2, 4]].forEach(function (p) {
-        put(g, 52 + p[0], 8 + p[1], p[0] % 2 ? rd : rc);
+        put(g, 58 + p[0], 4 + p[1], p[0] % 2 ? rd : rc);
       });
     }
     var c = document.createElement('canvas');
@@ -419,11 +423,11 @@ window.QW = window.QW || {};
   }
 
   /* Zeichnet eine Figur in ein Canvas. */
-  QW.drawPerson = function (canvas, look, mood) {
+  QW.drawPerson = function (canvas, look, mood, turn) {
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, W, H);
-    ctx.drawImage(render(look, mood), 0, 0);
+    ctx.drawImage(render(look, mood, turn), 0, 0);
   };
 
   /* Kleine ASCII-Sprites für Tischdeko. */
