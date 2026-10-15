@@ -29,8 +29,8 @@
   background: #222;
   user-select: none; -webkit-user-select: none;
 }
-.hint-portrait { display: none; color: #9a8ac8; font-size: 13px; }
-@media (orientation: portrait) and (max-width: 700px) { .hint-portrait { display: block; } }
+.hint-mobile { display: none; color: #9a8ac8; font-size: 13px; }
+@media (max-width: 800px) { .hint-mobile { display: block; } }
 
 #room { position: absolute; left: 0; top: 0; }
 .person.side canvas { -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent 96%); mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent 96%); }
@@ -94,8 +94,7 @@
   pointer-events: auto;
   filter: drop-shadow(8px 10px 0 rgba(0,0,0,.35));
 }
-#stage.zoomed #poster { transform: translateY(-150px) rotateX(0deg) scale(1.22); }
-#radar { display: block; touch-action: none; cursor: crosshair; font-family: var(--ui); }
+#radar { display: block; width: 470px; height: 470px; touch-action: none; cursor: crosshair; font-family: var(--ui); }
 #radar .seg { fill: transparent; cursor: crosshair; }
 #radar .seg.locked { cursor: default; }
 #radar text { pointer-events: none; }
@@ -186,3 +185,20 @@
 .res-row .ok { color: #0a7a2a; } .res-row .mid { color: #a06a00; } .res-row .bad { color: #b01a10; }
 .res-row q { display: block; color: #444; font-style: italic; quotes: none; }
 .res-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+/* Poster im Vollbild */
+body.noscroll { overflow: hidden; }
+.fullview { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; background: #1b1030; }
+.fullview[hidden] { display: none; }
+.fv-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--win); color: #000; font: 14px/1.35 var(--ui);
+  border-bottom: 2px solid #404040;
+}
+.fv-bar .readout { flex: 1 1 220px; min-height: 0; margin: 0; padding: 4px 8px; }
+.fv-bar .status { flex: 1 1 100%; margin: 0; min-height: 0; }
+.fv-bar .status:empty { display: none; }
+.fv-legend { flex: 1 1 100%; font-size: 13px; }
+.fv-holder { flex: 1; min-height: 0; display: flex; background: #f1e3bd; }
+#radar.full { width: 100%; height: 100%; cursor: pointer; }
+#radar.full .axis-label { font-size: 15px; }

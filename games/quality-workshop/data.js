@@ -3,14 +3,14 @@ window.QW = window.QW || {};
 
 /* Die 8 Produktqualitätsmerkmale nach ISO/IEC 25010:2011, im Uhrzeigersinn ab 12 Uhr. */
 QW.ATTRS = [
-  { id: 'functional',      name: 'Funktionale Eignung',  lines: ['Funktionale', 'Eignung'] },
-  { id: 'performance',     name: 'Performance-Effizienz', lines: ['Performance-', 'Effizienz'] },
-  { id: 'compatibility',   name: 'Kompatibilität',       lines: ['Kompatibilität'] },
-  { id: 'usability',       name: 'Benutzbarkeit',        lines: ['Benutzbarkeit'] },
-  { id: 'reliability',     name: 'Zuverlässigkeit',      lines: ['Zuverlässigkeit'] },
-  { id: 'security',        name: 'Sicherheit',           lines: ['Sicherheit'] },
-  { id: 'maintainability', name: 'Wartbarkeit',          lines: ['Wartbarkeit'] },
-  { id: 'portability',     name: 'Übertragbarkeit',      lines: ['Übertragbarkeit'] }
+  { id: 'functional',      name: 'Funktionale Eignung',  lines: ['Funktionale', 'Eignung'], fullLines: ['Funktionale', 'Eignung'] },
+  { id: 'performance',     name: 'Performance-Effizienz', lines: ['Performance-', 'Effizienz'], fullLines: ['Performance-', 'Effizienz'] },
+  { id: 'compatibility',   name: 'Kompatibilität',       lines: ['Kompatibilität'], fullLines: ['Kompati-', 'bilität'] },
+  { id: 'usability',       name: 'Benutzbarkeit',        lines: ['Benutzbarkeit'], fullLines: ['Benutz-', 'barkeit'] },
+  { id: 'reliability',     name: 'Zuverlässigkeit',      lines: ['Zuverlässigkeit'], fullLines: ['Zuverlässig-', 'keit'] },
+  { id: 'security',        name: 'Sicherheit',           lines: ['Sicherheit'], fullLines: ['Sicherheit'] },
+  { id: 'maintainability', name: 'Wartbarkeit',          lines: ['Wartbarkeit'], fullLines: ['Wart-', 'barkeit'] },
+  { id: 'portability',     name: 'Übertragbarkeit',      lines: ['Übertragbarkeit'], fullLines: ['Übertrag-', 'barkeit'] }
 ];
 
 /* Skala 0-10: was die Punkte bedeuten. */

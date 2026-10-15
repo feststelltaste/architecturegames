@@ -4,8 +4,9 @@
   var Q = window.QW;
   var ATTRS = Q.ATTRS, STAGE_W = 960;
   var NS = 'http://www.w3.org/2000/svg';
-  var R = 112;                       // Radius des Diagramms in SVG-Einheiten
+  var R = 112;                       // Radius des Diagramms in SVG-Einheiten (am Tisch 112, im Vollbild 140)
   var UNIT = R / 10;
+  var FULL = false, K = 1;           // Vollbild-Modus und Größenfaktor für Linien/Schrift
 
   function $(s) { return document.querySelector(s); }
   function el(tag, attrs, parent, text) {
@@ -92,7 +93,7 @@
 
   // Grenzen der Trefferzonen je Wert: 0 | 1 ... 10 (Nullzone etwas größer)
   function zoneInner(v) { return v === 0 ? 0 : (v === 1 ? 0.8 : v - 0.5) * UNIT; }
-  function zoneOuter(v) { return v === 10 ? R + 26 : (v === 0 ? 0.8 : v + 0.5) * UNIT; }
+  function zoneOuter(v) { return v === 10 ? R + 26 * K : (v === 0 ? 0.8 : v + 0.5) * UNIT; }
 
   function sectorPath(i, v) {
     var a0 = ang(i) - Math.PI / 8, a1 = ang(i) + Math.PI / 8;
@@ -103,25 +104,31 @@
            ' L' + P(a1, r0) + ' A' + r0 + ' ' + r0 + ' 0 0 0 ' + P(a0, r0) + ' Z';
   }
 
-  function buildRadar() {
-    // Papier: Achteck
-    var paper = [];
-    for (var k = 0; k < 8; k++) {
-      var a = (-90 + 22.5 + 45 * k) * Math.PI / 180;
-      paper.push((252 * Math.cos(a)).toFixed(1) + ',' + (252 * Math.sin(a)).toFixed(1));
+  function buildRadar(full) {
+    FULL = !!full; R = FULL ? 170 : 112; UNIT = R / 10; K = FULL ? 1.3 : 1;
+    radar.textContent = ''; labelEls = []; seg = {};
+    radar.classList.toggle('full', FULL);
+    radar.setAttribute('viewBox', FULL ? '-256 -256 512 512' : '-250 -250 500 500');
+    var k, a;
+    if (!FULL) {
+      // Papier: Achteck
+      var paper = [];
+      for (k = 0; k < 8; k++) {
+        a = (-90 + 22.5 + 45 * k) * Math.PI / 180;
+        paper.push((252 * Math.cos(a)).toFixed(1) + ',' + (252 * Math.sin(a)).toFixed(1));
+      }
+      svg('polygon', { points: paper.join(' '), fill: '#f1e3bd', stroke: '#3a2a18', 'stroke-width': 4 }, radar);
+      var inner = [];
+      for (k = 0; k < 8; k++) {
+        a = (-90 + 22.5 + 45 * k) * Math.PI / 180;
+        inner.push((240 * Math.cos(a)).toFixed(1) + ',' + (240 * Math.sin(a)).toFixed(1));
+      }
+      svg('polygon', { points: inner.join(' '), fill: 'none', stroke: '#b89c68', 'stroke-width': 1.5 }, radar);
+      // Klebestreifen
+      svg('rect', { x: -34, y: -250, width: 68, height: 18, fill: 'rgba(255,255,255,.55)', stroke: 'rgba(0,0,0,.15)', transform: 'rotate(-3)' }, radar);
+      svg('text', { x: 0, y: -222, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 'bold', fill: '#7a5a30', 'letter-spacing': 2 }, radar, 'ISO/IEC 25010');
+      svg('text', { x: 0, y: 232, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 'bold', fill: '#7a5a30', 'letter-spacing': 2 }, radar, 'PRODUKTQUALITÄT');
     }
-    svg('polygon', { points: paper.join(' '), fill: '#f1e3bd', stroke: '#3a2a18', 'stroke-width': 4 }, radar);
-    var inner = [];
-    for (k = 0; k < 8; k++) {
-      a = (-90 + 22.5 + 45 * k) * Math.PI / 180;
-      inner.push((240 * Math.cos(a)).toFixed(1) + ',' + (240 * Math.sin(a)).toFixed(1));
-    }
-    svg('polygon', { points: inner.join(' '), fill: 'none', stroke: '#b89c68', 'stroke-width': 1.5 }, radar);
-    // Klebestreifen
-    svg('rect', { x: -34, y: -250, width: 68, height: 18, fill: 'rgba(255,255,255,.55)', stroke: 'rgba(0,0,0,.15)', transform: 'rotate(-3)' }, radar);
-
-    svg('text', { x: 0, y: -222, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 'bold', fill: '#7a5a30', 'letter-spacing': 2 }, radar, 'ISO/IEC 25010');
-    svg('text', { x: 0, y: 232, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 'bold', fill: '#7a5a30', 'letter-spacing': 2 }, radar, 'PRODUKTQUALITÄT');
 
     // Ringe
     for (var r = 1; r <= 10; r++) {
@@ -133,31 +140,42 @@
     for (i = 0; i < 8; i++) { var q = pt(i, R); svg('line', { x1: 0, y1: 0, x2: q[0], y2: q[1], stroke: '#9a8660', 'stroke-width': 1 }, radar); }
     // Zahlen an der oberen Achse
     [2, 4, 6, 8, 10].forEach(function (n) {
-      svg('text', { x: 4, y: -n * UNIT + 4, 'font-size': 9, fill: '#6a5a40' }, radar, String(n));
+      svg('text', { x: 4, y: -n * UNIT + 4, 'font-size': 9 * K, fill: '#6a5a40' }, radar, String(n));
     });
 
     // Beschriftungen
     ATTRS.forEach(function (at, i) {
-      var c = pt(i, i === 2 || i === 6 ? 170 : 176);
-      var t = svg('text', { x: c[0], y: c[1] - (at.lines.length - 1) * 6.5 + 4, 'text-anchor': 'middle', 'class': 'axis-label untouched' }, radar);
-      at.lines.forEach(function (ln, j) {
-        svg('tspan', { x: c[0], dy: j === 0 ? 0 : 13 }, t, ln);
+      var horiz = i === 2 || i === 6;
+      var lines = FULL ? at.fullLines : at.lines;
+      var c = pt(i, FULL ? R + (horiz ? 37 : 34) : (horiz ? 170 : 176));
+      var anchor = 'middle';
+      if (FULL && horiz) { anchor = i === 2 ? 'start' : 'end'; c[0] = (i === 2 ? 1 : -1) * (R + 9); }
+      var t = svg('text', { x: c[0], y: c[1] - (lines.length - 1) * 6.5 * K + 4, 'text-anchor': anchor, 'class': 'axis-label untouched' }, radar);
+      lines.forEach(function (ln, j) {
+        svg('tspan', { x: c[0], dy: j === 0 ? 0 : 13 * K }, t, ln);
       });
       labelEls.push(t);
     });
 
-    truthPoly = svg('polygon', { fill: 'rgba(30,160,80,.22)', stroke: '#16883e', 'stroke-width': 3, 'stroke-dasharray': '7 5', visibility: 'hidden', 'pointer-events': 'none' }, radar);
-    gPoly = svg('polygon', { fill: 'rgba(40,110,255,.32)', stroke: '#1f4fd8', 'stroke-width': 3, 'stroke-linejoin': 'round', 'pointer-events': 'none' }, radar);
+    truthPoly = svg('polygon', { fill: 'rgba(30,160,80,.22)', stroke: '#16883e', 'stroke-width': 3 * K, 'stroke-dasharray': '7 5', visibility: 'hidden', 'pointer-events': 'none' }, radar);
+    gPoly = svg('polygon', { fill: 'rgba(40,110,255,.32)', stroke: '#1f4fd8', 'stroke-width': 3 * K, 'stroke-linejoin': 'round', 'pointer-events': 'none' }, radar);
     gNodes = svg('g', { 'pointer-events': 'none' }, radar);
     gVals = svg('g', { 'pointer-events': 'none' }, radar);
-    hoverMark = svg('circle', { r: 7, fill: 'none', stroke: '#0a3fc0', 'stroke-width': 2.5, visibility: 'hidden', 'pointer-events': 'none' }, radar);
+    hoverMark = svg('circle', { r: 7 * K, fill: 'none', stroke: '#0a3fc0', 'stroke-width': 2.5 * K, visibility: 'hidden', 'pointer-events': 'none' }, radar);
 
     // Trefferzonen (unsichtbar, funktionieren auch unter der 3D-Neigung)
     var gSeg = svg('g', null, radar);
     for (i = 0; i < 8; i++) for (var v = 0; v <= 10; v++) {
       var path = svg('path', { d: sectorPath(i, v), 'class': 'seg', 'data-i': i, 'data-v': v }, gSeg);
       seg[i + ':' + v] = path;
+      if (S.phase === 'result') path.classList.add('locked');
     }
+    if (S.phase === 'result' && S.scenario) applyTruth();
+  }
+
+  function applyTruth() {
+    truthPoly.setAttribute('points', polyPoints(ATTRS.map(function (a) { return S.scenario.truth[a.id]; })));
+    truthPoly.setAttribute('visibility', 'visible');
   }
 
   function renderRadar() {
@@ -167,9 +185,9 @@
       labelEls[i].setAttribute('class', 'axis-label' + (S.touched[i] ? '' : ' untouched'));
       if (!S.touched[i]) return;
       var p = pt(i, v * UNIT);
-      svg('circle', { cx: p[0], cy: p[1], r: 5.5, fill: '#fff', stroke: '#1f4fd8', 'stroke-width': 3 }, gNodes);
-      var o = pt(i, v * UNIT + 14);
-      var t = svg('text', { x: o[0], y: o[1] + 5, 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 'bold', fill: '#0a2a8c', stroke: '#f1e3bd', 'stroke-width': 4, 'paint-order': 'stroke' }, gVals, String(v));
+      svg('circle', { cx: p[0], cy: p[1], r: 5.5 * K, fill: '#fff', stroke: '#1f4fd8', 'stroke-width': 3 * K }, gNodes);
+      var o = pt(i, v * UNIT + 14 * K);
+      var t = svg('text', { x: o[0], y: o[1] + 5 * K, 'text-anchor': 'middle', 'font-size': 15 * K, 'font-weight': 'bold', fill: '#0a2a8c', stroke: '#f1e3bd', 'stroke-width': 4 * K, 'paint-order': 'stroke' }, gVals, String(v));
       t.setAttribute('stroke-linejoin', 'round');
     });
   }
@@ -179,11 +197,14 @@
     return '';
   }
   function showReadout(i, v, hover) {
-    var r = $('#readout');
-    if (i == null) { r.textContent = 'Fahre mit der Maus über das Poster und klicke (oder ziehe), um Punkte zu vergeben.'; return; }
-    r.innerHTML = '';
-    el('b', null, r, ATTRS[i].name);
-    r.appendChild(document.createTextNode(': ' + v + ' von 10 – ' + scaleWord(v) + (hover ? '' : '')));
+    var targets = [$('#readout'), $('#readoutFull')];
+    targets.forEach(function (r, n) {
+      if (i == null) { r.textContent = n ? 'Tippe oder ziehe auf dem Poster, um Punkte zu vergeben.' : 'Fahre mit der Maus über das Poster und klicke (oder ziehe), um Punkte zu vergeben.'; return; }
+      r.innerHTML = '';
+      el('b', null, r, ATTRS[i].name);
+      r.appendChild(document.createTextNode(': ' + v + ' von 10 – ' + scaleWord(v)));
+    });
+    if (i == null) return;
     var rows = document.querySelectorAll('#scale tr');
     for (var k = 0; k < rows.length; k++) rows[k].classList.toggle('on', Q.SCALE[k].from <= v && v <= Q.SCALE[k].to);
   }
@@ -210,7 +231,9 @@
     labelEls[i].classList.add('hot');
     if (!dragging) showReadout(i, v, true);
   }
+  var narrow = window.matchMedia('(max-width: 800px)');
   radar.addEventListener('pointerdown', function (e) {
+    if (!FULL && S.phase !== 'title' && narrow.matches) { openFull(); e.preventDefault(); return; }
     if (S.phase !== 'interview') return;
     dragging = true;
     try { radar.setPointerCapture(e.pointerId); } catch (x) { /* egal */ }
@@ -352,7 +375,7 @@
     S.heardAll = heardAll; S.totalStatements = total;
   }
 
-  function setStatus(msg) { $('#status').textContent = msg; }
+  function setStatus(msg) { $('#status').textContent = msg; $('#statusFull').textContent = msg; }
 
   /* ---------- Auswertung ---------- */
   function evaluate() {
@@ -370,8 +393,9 @@
     var pct = Math.round(ATTRS.reduce(function (sum, a) { return sum + Q.JUDGE.attrPoints(diffs[a.id]); }, 0) / ATTRS.length);
     saveBest(sc.id, pct);
 
-    truthPoly.setAttribute('points', polyPoints(ATTRS.map(function (a) { return sc.truth[a.id]; })));
-    truthPoly.setAttribute('visibility', 'visible');
+    applyTruth();
+    $('#fullSubmit').textContent = 'Auswertung ansehen';
+    $('#fullLegend').hidden = false;
 
     // Ergebnisfenster
     var body = $('#resultBody'); body.textContent = '';
@@ -430,10 +454,20 @@
   }
 
   /* ---------- Ablauf ---------- */
-  function setZoom(on) {
-    S.zoom = on;
-    stage.classList.toggle('zoomed', on);
-    $('#zoomBtn').setAttribute('aria-pressed', on ? 'true' : 'false');
+  var fullEl = $('#fullView'), fullHolder = $('#fullHolder'), posterEl = $('#poster');
+  function openFull() {
+    if (FULL || S.phase === 'title') return;
+    fullEl.hidden = false; document.body.classList.add('noscroll');
+    fullHolder.appendChild(radar);
+    buildRadar(true); renderRadar();
+    S.values.forEach(function () {});
+  }
+  function closeFull() {
+    if (!FULL) return;
+    hover(null); dragging = false;
+    posterEl.appendChild(radar);
+    buildRadar(false); renderRadar();
+    fullEl.hidden = true; document.body.classList.remove('noscroll');
   }
 
   function startScenario(id) {
@@ -443,8 +477,9 @@
     S.values = ATTRS.map(function () { return 0; });
     S.touched = ATTRS.map(function () { return false; });
     truthPoly.setAttribute('visibility', 'hidden');
+    closeFull();
     document.querySelectorAll('#radar .seg').forEach(function (s) { s.classList.remove('locked'); });
-    setZoom(false);
+    $('#fullSubmit').textContent = 'Einschätzung abgeben'; $('#fullLegend').hidden = true;
     buildPeople(); renderRadar(); renderNotes(); updatePeopleBadges(); showReadout(null);
     setStatus('');
     $('#orderText').innerHTML = '';
@@ -460,6 +495,7 @@
   }
 
   function showTitle() {
+    closeFull();
     stopTyping(); clearBubbles();
     S.phase = 'title';
     var best = loadBest();
@@ -486,7 +522,10 @@
 
   /* ---------- Verdrahtung ---------- */
   $('#submitBtn').addEventListener('click', evaluate);
-  $('#zoomBtn').addEventListener('click', function () { setZoom(!S.zoom); });
+  $('#zoomBtn').addEventListener('click', openFull);
+  $('#fullClose').addEventListener('click', closeFull);
+  $('#fullSubmit').addEventListener('click', function () { if (S.phase === 'result') closeFull(); else evaluate(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeFull(); });
 
   var scaleTable = $('#scale');
   Q.SCALE.forEach(function (s) {
