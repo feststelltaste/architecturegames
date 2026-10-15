@@ -6,6 +6,7 @@
   var NS = 'http://www.w3.org/2000/svg';
   var R = 112;                       // Radius des Diagramms in SVG-Einheiten (am Tisch 112, im Vollbild 140)
   var UNIT = R / 10;
+  var PANEL = false, overlayOpen = false;   // PANEL: Poster liegt im Hochformat unter der Szene
   var FULL = false, K = 1;           // Vollbild-Modus und Größenfaktor für Linien/Schrift
 
   function $(s) { return document.querySelector(s); }
@@ -44,9 +45,18 @@
   var personEls = {};         // id -> { btn, canvas, person }
 
   /* ---------- Skalierung der Bühne ---------- */
+  var CROP = null;          // Ausschnitt der Szene im Hochformat {x, w, h}
   function fit() {
-    var s = wrap.clientWidth / STAGE_W;
-    stage.style.transform = 'scale(' + s + ')';
+    var s;
+    if (PANEL && CROP) {
+      wrap.style.aspectRatio = CROP.w + ' / ' + CROP.h;
+      s = wrap.clientWidth / CROP.w;
+      stage.style.transform = 'translate(' + (-CROP.x * s) + 'px, 0) scale(' + s + ')';
+    } else {
+      wrap.style.aspectRatio = '';
+      s = wrap.clientWidth / STAGE_W;
+      stage.style.transform = 'scale(' + s + ')';
+    }
   }
   window.addEventListener('resize', fit);
   fit();
@@ -253,6 +263,18 @@
   /* ---------- Sprechblasen ---------- */
   function clearBubbles() { bubblesEl.textContent = ''; }
 
+  /* Im Hochformat sind die Blasen auf der Bühne zu klein: der Text steht zusätzlich in einem Feld unter der Szene. */
+  var speechEl = $('#speechPanel');
+  var SPEECH_HINT = 'Tippe oben auf eine Person, um zuzuhören.';
+  function resetSpeech() { speechEl.textContent = ''; el('span', { 'class': 'hint' }, speechEl, SPEECH_HINT); }
+  function setSpeech(person, text, append) {
+    if (!append) speechEl.textContent = '';
+    var row = el('p', null, speechEl);
+    var who = el('span', { 'class': 'who' }, row, person.name); who.style.setProperty('--c', person.color);
+    var t = el('span', { 'class': 'txt' }, row, text);
+    return t;
+  }
+
   function makeBubble(person, pe, text, small) {
     var cx = pe.cx;
     var b = el('div', { 'class': 'bubble' + (small ? ' small' : '') });
@@ -280,6 +302,7 @@
     clearInterval(S.typing.timer);
     var ty = S.typing; S.typing = null;
     ty.bub.txt.textContent = ty.bub.full;
+    if (ty.mirror) ty.mirror.textContent = ty.bub.full;
     setMood(ty.person.id, 'neutral');
   }
 
@@ -295,9 +318,11 @@
     var text = person.statements[idx].text;
     var bub = makeBubble(person, personEls[person.id], '„' + text + '“', false);
     var pos = 0, flap = false;
-    S.typing = { person: person, bub: bub, timer: setInterval(function () {
+    var mirror = setSpeech(person, '');
+    S.typing = { person: person, bub: bub, mirror: mirror, timer: setInterval(function () {
       pos += 2;
       bub.txt.textContent = bub.full.slice(0, pos);
+      mirror.textContent = bub.full.slice(0, pos);
       flap = !flap;
       setMood(person.id, flap ? 'talk' : 'neutral');
       if (pos >= bub.full.length) stopTyping();
@@ -354,6 +379,37 @@
       el('small', null, plate, p.role);
     });
   }
+
+  function computeCrop() {
+    var xs = Object.keys(personEls).map(function (id) { return personEls[id].cx; });
+    var minX = Math.min.apply(null, xs) - 95, maxX = Math.max.apply(null, xs) + 95;
+    var w = Math.min(STAGE_W, Math.max(560, maxX - minX));
+    var x = Math.max(0, Math.min(STAGE_W - w, (minX + maxX) / 2 - w / 2));
+    var h = Math.max.apply(null, xs.map(edgeY)) + 62;
+    CROP = { x: x, w: w, h: Math.round(h) };
+    fit();
+  }
+
+  /* Hochformat (Smartphone): Szene oben als Ausschnitt, das Poster darunter in voller Breite. */
+  var portraitMQ = window.matchMedia('(max-width: 800px) and (orientation: portrait)');
+  var panelHolder = $('#panelHolder');
+  function applyLayout() {
+    var p = portraitMQ.matches;
+    if (p !== PANEL) {
+      if (p) {
+        closeFull(); PANEL = true;
+        document.body.classList.add('portrait');
+        panelHolder.appendChild(radar); buildRadar(true);
+      } else {
+        PANEL = false;
+        document.body.classList.remove('portrait');
+        $('#poster').appendChild(radar); buildRadar(false);
+      }
+      renderRadar();
+    }
+    fit();
+  }
+  portraitMQ.addEventListener('change', applyLayout);
 
   /* ---------- Notizbuch ---------- */
   function renderNotes() {
@@ -434,6 +490,7 @@
         var line = pick(Q.REACTIONS[mood]);
         var b = makeBubble(p, e, line, true);
         b.txt.textContent = line;
+        setSpeech(p, line, pi > 0);
       }, 500 + pi * 700);
     });
 
@@ -456,14 +513,16 @@
   /* ---------- Ablauf ---------- */
   var fullEl = $('#fullView'), fullHolder = $('#fullHolder'), posterEl = $('#poster');
   function openFull() {
-    if (FULL || S.phase === 'title') return;
+    if (overlayOpen || PANEL || S.phase === 'title') return;
+    overlayOpen = true;
     fullEl.hidden = false; document.body.classList.add('noscroll');
     fullHolder.appendChild(radar);
     buildRadar(true); renderRadar();
     S.values.forEach(function () {});
   }
   function closeFull() {
-    if (!FULL) return;
+    if (!overlayOpen) return;
+    overlayOpen = false;
     hover(null); dragging = false;
     posterEl.appendChild(radar);
     buildRadar(false); renderRadar();
@@ -480,7 +539,7 @@
     closeFull();
     document.querySelectorAll('#radar .seg').forEach(function (s) { s.classList.remove('locked'); });
     $('#fullSubmit').textContent = 'Einschätzung abgeben'; $('#fullLegend').hidden = true;
-    buildPeople(); renderRadar(); renderNotes(); updatePeopleBadges(); showReadout(null);
+    buildPeople(); computeCrop(); renderRadar(); renderNotes(); updatePeopleBadges(); showReadout(null);
     setStatus('');
     $('#orderText').innerHTML = '';
     el('b', null, $('#orderText'), sc.title + ' – ' + sc.subtitle);
@@ -492,10 +551,11 @@
     var first = sc.people[0];
     var line = 'Schön, dass du da bist. Fragt uns einfach der Reihe nach.';
     var b = makeBubble(first, personEls[first.id], line, false); b.txt.textContent = line;
+    setSpeech(first, line);
   }
 
   function showTitle() {
-    closeFull();
+    closeFull(); resetSpeech();
     stopTyping(); clearBubbles();
     S.phase = 'title';
     var best = loadBest();
@@ -536,7 +596,8 @@
 
   buildRadar();
   S.scenario = Q.SCENARIOS[0];
-  buildPeople(); renderRadar(); renderNotes();
+  buildPeople(); computeCrop(); renderRadar(); renderNotes(); resetSpeech();
+  applyLayout();
   showTitle();
 
   Q._start = startScenario;
