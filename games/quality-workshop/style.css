@@ -215,7 +215,7 @@ body.portrait .speech-panel {
 .speech-panel .hint { color: #777; }
 body.portrait #stage { width: 600px; height: 920px; background: #3b3d6b; }
 body.portrait #room { left: -180px; }
-body.portrait #table { left: 20px; top: 300px; width: 560px; height: 600px; }
+body.portrait #table { left: 0; top: 300px; width: 600px; height: 620px; border-radius: 300px 300px 0 0 / 280px 280px 0 0; border-bottom: 0; box-shadow: inset 0 5px 0 #c1905a; }
 body.portrait #table .decor { display: none; }
 body.portrait #posterStage { left: 17px; top: 352px; width: 566px; height: 540px; }
 body.portrait #poster { left: 0; top: -13px; width: 566px; height: 566px; transform: rotateX(26deg); }

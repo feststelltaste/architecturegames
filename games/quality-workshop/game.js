@@ -348,7 +348,7 @@
   // Sitzplätze rund um den ovalen Tisch (Mitte 480/486, Halbachsen 360/190)
   // Querformat: Tisch 720x380 (Mitte 480/486). Hochformat: Tisch 560x560 (Mitte 300/580).
   function edgeY(x) {
-    var c = PANEL ? { x: 300, y: 580, a: 290, b: 280 } : { x: 480, y: 486, a: 360, b: 190 };
+    var c = PANEL ? { x: 300, y: 580, a: 300, b: 280 } : { x: 480, y: 486, a: 360, b: 190 };
     return c.y - c.b * Math.sqrt(Math.max(0, 1 - Math.pow((x - c.x) / c.a, 2)));
   }
   var LAND = {
