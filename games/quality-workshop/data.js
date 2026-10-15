@@ -55,7 +55,7 @@ QW.SCENARIOS = [
       },
       {
         id: 'tim', name: 'Tim', role: 'Entwickler', color: '#6fe3ff',
-        look: { skin: '#e8b890', hair: '#2b2b3a', hairStyle: 'short', shirt: '#3a4a8c', extras: ['glasses'] },
+        look: { skin: '#e8b890', hair: '#2b2b3a', hairStyle: 'short', shirt: '#3a4a8c', iris: '#3a6a9c', extras: ['glasses'] },
         statements: [
           { attr: 'security', text: 'Kreditkarten, Adressen, Passwörter. Wenn da was abfließt, haben wir die DSGVO und die Presse am Hals. Da gibt es keine Abstriche.' },
           { attr: 'maintainability', text: 'Wir sind nur zu dritt am Code. Ein bisschen Ordnung reicht, aber für perfekte Architektur fehlt uns die Zeit.' }
@@ -63,7 +63,7 @@ QW.SCENARIOS = [
       },
       {
         id: 'holger', name: 'Holger', role: 'Betrieb', color: '#9dff7a',
-        look: { skin: '#d9a77c', hair: '#8a8a8a', hairStyle: 'bald', shirt: '#3d7a4a', extras: ['beard'] },
+        look: { skin: '#d9a77c', hair: '#8a8a8a', hairStyle: 'bald', shirt: '#3d7a4a', iris: '#4a7a9a', extras: ['beard'] },
         statements: [
           { attr: 'reliability', text: 'Wenn der Shop nachts um drei ausfällt, klingelt mein Telefon. Der muss durchlaufen, mindestens 99,9 Prozent.' },
           { attr: 'compatibility', text: 'Ans Warenwirtschaftssystem hängen wir uns über eine Standard-Schnittstelle. Mehr Systeme gibt es nicht. Nett, wenn es klappt, kein Aufreger.' },
@@ -82,7 +82,7 @@ QW.SCENARIOS = [
     people: [
       {
         id: 'weber', name: 'Dr. Weber', role: 'Oberärztin', color: '#ff9ec7',
-        look: { skin: '#f3d0b0', hair: '#c9a24a', hairStyle: 'bun', shirt: '#e8eef2', extras: [] },
+        look: { skin: '#f3d0b0', hair: '#c9a24a', hairStyle: 'bun', shirt: '#e8eef2', outfit: 'coat', iris: '#4a8a5a', extras: [] },
         statements: [
           { attr: 'reliability', text: 'Fällt die Terminvergabe in der Notaufnahme aus, kann das Leben kosten. Ausfälle sind für mich nicht verhandelbar.' },
           { attr: 'functional', text: 'Die Befund- und Terminlogik muss exakt stimmen. Ein falsch zugeordneter Befund ist ein Kunstfehler.' },
@@ -127,7 +127,7 @@ QW.SCENARIOS = [
       },
       {
         id: 'ben', name: 'Ben', role: 'Gründer', color: '#7affc4',
-        look: { skin: '#e8b890', hair: '#2a1a10', hairStyle: 'curly', shirt: '#ff7a3d', extras: [] },
+        look: { skin: '#e8b890', hair: '#2a1a10', hairStyle: 'curly', shirt: '#ff7a3d', outfit: 'tshirt', iris: '#3a6a9c', extras: [] },
         statements: [
           { attr: 'functional', text: 'Wir haben Mathe und Deutsch, mehr nicht. Für den Start reicht ein Kern, Hauptsache die Aufgaben stimmen.' },
           { attr: 'maintainability', text: 'Wir wollen jede Woche neue Aufgabentypen ausrollen. Kostet jeder Typ zwei Wochen Umbau, sind wir pleite. Änderbarkeit ist unser Geschäftsmodell.' },
