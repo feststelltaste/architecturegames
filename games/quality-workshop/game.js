@@ -208,7 +208,7 @@
   function showReadout(i, v, hover) {
     var targets = [$('#readout'), $('#readoutFull')];
     targets.forEach(function (r, n) {
-      if (i == null) { r.textContent = n ? 'Tippe oder ziehe auf dem Poster, um Punkte zu vergeben.' : 'Fahre mit der Maus über das Poster und klicke (oder ziehe), um Punkte zu vergeben.'; return; }
+      if (i == null) { r.textContent = n ? 'Tippe oder ziehe auf dem Poster, um Punkte zu vergeben.' : 'Klicke oder ziehe auf dem Poster, um Punkte zu vergeben.'; return; }
       r.innerHTML = '';
       el('b', null, r, ATTRS[i].name);
       r.appendChild(document.createTextNode(': ' + v + ' von 10 – ' + scaleWord(v)));
@@ -427,6 +427,27 @@
 
   function setStatus(msg) { $('#status').textContent = msg; $('#statusFull').textContent = msg; }
 
+  /* ---------- Blätter und Leiste ---------- */
+  var modalEl = $('#modal');
+  var SHEET_TITLES = { order: 'Auftrag', notes: 'Notizbuch', scale: 'Skala', result: 'Auswertung' };
+  function openSheet(name) {
+    stopTyping();
+    Array.prototype.forEach.call(modalEl.querySelectorAll('[data-sheet]'), function (s) { s.classList.toggle('on', s.getAttribute('data-sheet') === name); });
+    $('#sheetTitle').textContent = SHEET_TITLES[name];
+    modalEl.hidden = false; document.body.classList.add('modal-open');
+  }
+  function closeSheet() { modalEl.hidden = true; document.body.classList.remove('modal-open'); }
+  function setBar(mode) { $('#verbbar').setAttribute('data-mode', mode); }
+  $('#sheetClose').addEventListener('click', closeSheet);
+  modalEl.addEventListener('click', function (e) { if (e.target === modalEl || e.target.hasAttribute('data-close')) closeSheet(); });
+  $('#btnOrder').addEventListener('click', function () { openSheet('order'); });
+  $('#btnNotes').addEventListener('click', function () { openSheet('notes'); });
+  $('#btnScale').addEventListener('click', function () { openSheet('scale'); });
+  $('#btnResult').addEventListener('click', function () { openSheet('result'); });
+  $('#btnAgain').addEventListener('click', function () { S.actions && S.actions.again(); });
+  $('#btnNext').addEventListener('click', function () { S.actions && S.actions.next(); });
+  $('#btnMenu').addEventListener('click', function () { showTitle(); });
+
   /* ---------- Auswertung ---------- */
   function evaluate() {
     var sc = S.scenario, missingHeard = S.totalStatements - S.heardAll;
@@ -505,19 +526,19 @@
     }
 
     var act = el('div', { 'class': 'res-actions' }, body);
-    var again = el('button', { 'class': 'btn', type: 'button' }, act, 'Nochmal');
-    var next = el('button', { 'class': 'btn primary', type: 'button' }, act, 'Nächster Fall');
-    var menu = el('button', { 'class': 'btn', type: 'button' }, act, 'Fallauswahl');
-    again.addEventListener('click', function () { startScenario(sc.id); });
-    next.addEventListener('click', function () {
+    var again = function () { startScenario(sc.id); };
+    var next = function () {
       var list = Q.SCENARIOS.filter(function (s) { return s.level === S.level; });
-      var k = list.indexOf(sc); startScenario(list[(k + 1) % list.length].id);
+      startScenario(list[(list.indexOf(sc) + 1) % list.length].id);
+    };
+    S.actions = { again: again, next: next, menu: showTitle };
+    [['Nochmal', again, ''], ['Nächster Fall', next, ' primary'], ['Fallauswahl', showTitle, '']].forEach(function (d) {
+      var bt = el('button', { 'class': 'btn' + d[2], type: 'button' }, act, d[0]);
+      bt.addEventListener('click', d[1]);
     });
-    menu.addEventListener('click', showTitle);
 
-    $('#resultWin').hidden = false;
-    $('#actionWin').hidden = true;
-    $('#resultWin').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    setBar('result');
+    openSheet('result');
   }
 
   /* ---------- Ablauf ---------- */
@@ -554,19 +575,19 @@
     setStatus('');
     $('#orderText').innerHTML = '';
     el('b', null, $('#orderText'), sc.title + ' – ' + sc.subtitle);
-    el('br', null, $('#orderText'));
     $('#orderText').appendChild(document.createTextNode(sc.intro));
-    $('#resultWin').hidden = true; $('#actionWin').hidden = false;
+    setBar('play'); closeSheet();
     titleEl.classList.remove('on');
     // kurzer Einstieg: erste Person begrüßt
     var first = sc.people[0];
     var line = 'Schön, dass du da bist. Fragt uns einfach der Reihe nach.';
     var b = makeBubble(first, personEls[first.id], line, false); b.txt.textContent = line;
     setSpeech(first, line);
+    openSheet('order');
   }
 
   function showTitle() {
-    closeFull(); resetSpeech();
+    closeFull(); closeSheet(); setBar('title'); resetSpeech();
     stopTyping(); clearBubbles();
     S.phase = 'title';
     var best = loadBest();
@@ -596,7 +617,7 @@
   $('#zoomBtn').addEventListener('click', openFull);
   $('#fullClose').addEventListener('click', closeFull);
   $('#fullSubmit').addEventListener('click', function () { if (S.phase === 'result') closeFull(); else evaluate(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeFull(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeSheet(); closeFull(); } });
 
   var scaleTable = $('#scale');
   Q.SCALE.forEach(function (s) {

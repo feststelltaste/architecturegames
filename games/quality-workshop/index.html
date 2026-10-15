@@ -97,43 +97,39 @@
         <div id="title" class="overlay"></div>
       </div>
       <div id="speechPanel" class="speech-panel" aria-live="polite"></div>
+      <div id="verbbar" class="verbbar" data-mode="title">
+        <div class="vb-read">
+          <div id="readout" class="readout">Fahre mit der Maus über das Poster.</div>
+          <div id="status" class="status" role="status" aria-live="polite"></div>
+        </div>
+        <div class="vb-btns">
+          <button class="btn" id="btnOrder" type="button">Auftrag</button>
+          <button class="btn" id="btnNotes" type="button">Notizbuch <span id="notesCount" class="count"></span></button>
+          <button class="btn" id="btnScale" type="button">Skala</button>
+          <button class="btn" id="zoomBtn" type="button">Poster groß</button>
+          <button class="btn primary vb-play" id="submitBtn" type="button">Einschätzung abgeben</button>
+          <button class="btn vb-result" id="btnResult" type="button">Auswertung</button>
+          <button class="btn primary vb-result" id="btnNext" type="button">Nächster Fall</button>
+          <button class="btn vb-result" id="btnAgain" type="button">Nochmal</button>
+          <button class="btn vb-result" id="btnMenu" type="button">Fallauswahl</button>
+        </div>
+      </div>
       <p class="hint-mobile">Tipp: Tippe auf die Personen, um ihnen zuzuhören.</p>
     </section>
 
-    <aside class="sidebar">
-      <section class="win" id="orderWin">
-        <div class="win-title">Auftrag.txt</div>
-        <div class="win-body"><p id="orderText" class="order">Wähle einen Fall im Titelbild.</p></div>
-      </section>
-
-      <section class="win" id="resultWin" hidden>
-        <div class="win-title">Auswertung.exe</div>
-        <div class="win-body" id="resultBody"></div>
-      </section>
-
-      <section class="win" id="actionWin">
-        <div class="win-title">Aktionen</div>
-        <div class="win-body">
-          <div id="readout" class="inset readout">Fahre mit der Maus über das Poster.</div>
-          <div class="btn-row">
-            <button class="btn primary" id="submitBtn" type="button">Einschätzung abgeben</button>
-            <button class="btn" id="zoomBtn" type="button">Poster groß</button>
-          </div>
-          <div id="status" class="status" role="status" aria-live="polite"></div>
-        </div>
-      </section>
-
-      <section class="win" id="notesWin">
-        <div class="win-title">Notizbuch.doc <span id="notesCount" class="count"></span></div>
-        <div class="win-body"><div id="notes" class="inset notes"></div></div>
-      </section>
-
-      <section class="win" id="scaleWin">
-        <div class="win-title">Skala.hlp</div>
-        <div class="win-body"><table id="scale" class="scale"></table></div>
-      </section>
-    </aside>
   </main>
+
+  <div id="modal" class="modal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <header class="sheet-head"><h2 id="sheetTitle">Auftrag</h2><button class="sheet-x" id="sheetClose" type="button" aria-label="Schließen">&times;</button></header>
+      <div class="sheet-body">
+        <section data-sheet="order"><p id="orderText" class="order">Wähle einen Fall im Titelbild.</p><div class="sheet-actions"><button class="btn primary" data-close type="button">Los geht&rsquo;s</button></div></section>
+        <section data-sheet="notes"><div id="notes" class="notes"></div></section>
+        <section data-sheet="scale"><p class="scale-intro">So viele Punkte bedeuten so viel:</p><table id="scale" class="scale"></table></section>
+        <section data-sheet="result"><div id="resultBody"></div></section>
+      </div>
+    </div>
+  </div>
 
   <div id="fullView" class="fullview" hidden role="dialog" aria-label="Poster im Vollbild">
     <div class="fv-bar">
